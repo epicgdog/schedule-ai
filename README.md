@@ -1,2 +1,2 @@
-# market-research
-research for small businesses
+# schedule ai
+build your schedule with the best possible profs and the times you specify
