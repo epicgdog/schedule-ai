@@ -51,7 +51,7 @@ async def scrape_sjsu():
         with sqlite3.connect(database) as conn:
             cursor = conn.cursor()
             logging.info("connected to db")
-            for row in table_rows[1:6]: # just for testing we do 5 classes
+            for row in table_rows[1:]: # just for testing we do 5 classes
                 info = row.find_all("td")
                 
                 course_name = info[0].string
