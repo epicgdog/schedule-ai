@@ -22,9 +22,9 @@ def database_setup():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         course_name TEXT NOT NULL,
         class_number INTEGER NOT NULL UNIQUE,
-        days TEXT NOT NULL,
-        times TEXT NOT NULL,
-        instructor TEXT NOT NULL,
+        days TEXT ,
+        times TEXT ,
+        instructor TEXT ,
         open_seats INTEGER NOT NULL
     )
     """
@@ -47,19 +47,20 @@ async def scrape_sjsu():
     soup = BeautifulSoup(res.text, 'html.parser')
     table_rows = soup.find_all("tr")
     logging.info("got the soup")
-    try:
-        with sqlite3.connect(database) as conn:
-            cursor = conn.cursor()
-            logging.info("connected to db")
-            for row in table_rows[1:]: # just for testing we do 5 classes
-                info = row.find_all("td")
-                
-                course_name = info[0].string
-                class_number = int(info[1].string)
-                days = info[7].string
-                times = info[8].string
-                instructor= info[9].string
-                open_seats = int(info[12].string)
+    with sqlite3.connect(database) as conn:
+        cursor = conn.cursor()
+        logging.info("connected to db")
+        for row in table_rows[1:]: # just for testing we do 5 classes
+            info = row.find_all("td")
+            
+            course_name = info[0].string
+            class_number = int(info[1].string)
+            days = info[7].string
+            times = info[8].string
+            instructor= info[9].string
+            open_seats = int(info[12].string)
+
+            try:
 
                 insert_sql = """
 
@@ -76,11 +77,11 @@ async def scrape_sjsu():
 
                 cursor.execute(insert_sql, (course_name, class_number, days, times, instructor, open_seats,))
                 conn.commit()
+            except Exception as e:
+                logging.error(f"error occured: {e}")
+        logging.info(f"inserting/updating {course_name} -> {class_number}!")
 
-                logging.info(f"inserted/updated ({class_number}) : {course_name}")
-    except Exception as e:
-        logging.error(f"error occured: {e}")
-
+    logging.info("inserts/updates completed!")
 
 async def scrape_handler():
     database_setup()
