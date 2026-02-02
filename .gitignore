@@ -1,9 +1,10 @@
 whoopsie/
+.venv/
 *.sqlite
 *.db
 __pycache__
 .env
-
+uv.lock
 # Frontend
 node_modules/
 frontend/dist/
