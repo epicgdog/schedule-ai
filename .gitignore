@@ -7,5 +7,6 @@ __pycache__
 uv.lock
 # Frontend
 node_modules/
+dev/
 frontend/dist/
 frontend/.vite/

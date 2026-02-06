@@ -59,7 +59,6 @@ const initialState = Object.fromEntries( DAYS.map((day) => [day, 0n]) ) as Recor
 const ScheduleForm: React.FC = () => {
   const [step, setStep] = useState(1);
   const [major, setMajor] = useState('');
-  const [courses, setCourses] = useState('');
   const [selectedTimes, setSelectedTimes] = useState<Record<Day, bigint>>(initialState);  
 
   const handleNext = () => {
@@ -86,7 +85,7 @@ const ScheduleForm: React.FC = () => {
 
     const scheduleData = {
       major: major,
-      courses: courses,
+      courses: '',
       schedule: JSON.stringify(selectedTimes, (_key, value) => typeof value === 'bigint' ? value.toString() : value),
     };
 
@@ -125,7 +124,7 @@ return (
             <MajorDropdown major={major} setMajor={setMajor} />
           )}
           {step === 2 && (
-            <CourseInput courses={courses} setCourses={setCourses} />
+            <CourseInput />
           )}
           {step === 3 && (
             <>

@@ -1,10 +1,10 @@
+# helper functions
+
 import sqlite3
 import logging
 from dotenv import load_dotenv
 import os
 import httpx
-
-from mcp.server.fastmcp import FastMCP
 
 load_dotenv()
 
@@ -15,25 +15,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-database = os.getenv("DATABASE", "db/main.db")
-mcp = FastMCP("scheduler app")
-
-# helper functions
-
-"""
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        course_name TEXT NOT NULL,
-        section_number INTEGER NOT NULL,
-        class_number INTEGER NOT NULL UNIQUE,
-        days TEXT ,
-        times TEXT ,
-        instructor TEXT ,
-        open_seats INTEGER NOT NULL
-        
-"""
-
-
-# rebuild lists of tuples into lists of jsons/dicts
 def parse_list(data_list):
     result = []
     for item in data_list:
@@ -62,7 +43,6 @@ def parse_list(data_list):
 
 
 # get scraped db; very basic edition
-@mcp.tool()
 async def get_open_classes_for(course_name: str) -> list[dict]:
     """
     Get open classes for a given course name from the database.
@@ -74,6 +54,7 @@ async def get_open_classes_for(course_name: str) -> list[dict]:
         List of available class sections with open seats.
     """
     try:
+        database = os.getenv("DATABASE")
         with sqlite3.connect(database) as conn:
             cursor = conn.cursor()
             sql = "SELECT * FROM sjsu_classes WHERE course_name = ? AND open_seats > 0"
@@ -84,7 +65,6 @@ async def get_open_classes_for(course_name: str) -> list[dict]:
         return []
 
 
-@mcp.tool()
 async def get_instructor_rating(query: str, count: int = 5) -> list[dict]:
     """
     Scrapes RateMyProfessors using their GraphQL API to get instructor ratings.
@@ -236,13 +216,3 @@ fragment TeacherSearchPagination_search_1jWD3d on newSearch {
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return []
-
-
-def main():
-    # result = await get_instructor_rating("Sriram Rao")
-    # logger.info(result)
-    mcp.run(transport="stdio")
-
-
-if __name__ == "__main__":
-    main()

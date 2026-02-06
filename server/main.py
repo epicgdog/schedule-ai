@@ -1,15 +1,13 @@
-import asyncio
 import logging
-from contextlib import asynccontextmanager
-from typing import Optional
 import uvicorn
-from mcp_server import get_open_classes_for, get_instructor_rating
-
-from fastapi import FastAPI, HTTPException
+import fitz
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 import json
+import agent
+from modules import get_instructor_rating, get_open_classes_for
 
 logging.basicConfig(
     level=logging.INFO,
@@ -63,6 +61,28 @@ def get_time_from_str(s: str):
             hour = int(hour) + 12
         return hour + int(minute) / 60
         # pm time
+
+
+@app.post("/api/generate_classes")
+async def generate_possible_classes(file: UploadFile = File(...)):
+    # Validate PDF content type
+    if file.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="File must be a PDF")
+
+    # Read file bytes
+    contents = await file.read()
+
+    # Open with fitz and extract text
+    doc = fitz.open(stream=contents, filetype="pdf")
+    text = ""
+    for page in doc:
+        text += page.get_text()
+    doc.close()
+
+    msg = agent.invoke(text)
+
+    # Return to frontend
+    return {"text": msg.content}
 
 
 @app.post("/api/schedule")
@@ -156,4 +176,4 @@ async def receive_schedule(request: ScheduleRequest):
 
 
 if __name__ == "__main__":
-    uvicorn.run("api_server:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
