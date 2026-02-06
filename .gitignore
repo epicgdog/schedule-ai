@@ -10,3 +10,8 @@ node_modules/
 dev/
 frontend/dist/
 frontend/.vite/
+.DS_Store
+.vscode/
+requirements-mac.txt
+requirements-linux.txt
+output.md
