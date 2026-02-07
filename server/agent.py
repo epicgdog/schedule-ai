@@ -1,70 +1,70 @@
 from langchain_openai import ChatOpenAI
-from langchain.agents import create_agent
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 import logging
-
 from dotenv import load_dotenv
 import os
-import tools
+
 load_dotenv()
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-
+# Initialize LLM
 llm = ChatOpenAI(
     model="gemma3:12b",
     temperature=0.1,
     base_url=os.getenv("LOCAL_IP_KEY"),
     api_key="ollama",
-    max_tokens=2048,
-    timeout=120
+    timeout=120,
 )
 
-system_prompt = (
-    "You have access to a tool that retrieves "
-)
-agent = create_agent(llm, tools, system_prompt=(""))
+extract_prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "You are a transcript parser. Extract the major and list of classes taken from the transcript.",
+        ),
+        (
+            "user",
+            """Parse the following transcript and extract:
+1. The student's major (as listed in the transcript)
+2. A list of all classes the student has taken and passed
 
-'''
-# At each turn, if you decide to invoke any of the function(s), it should be wrapped with ```tool_code```. The python methods described below are imported and available, you can only use defined methods. The generated code should be readable and efficient. The response to a method will be wrapped in ```tool_output``` use it to call more tools or generate a helpful, friendly response. When using a ```tool_call``` think step by step why and how it should be used.
-# The following Python methods are available: {tools.format_tool_to_prompt()}\n'''
+Transcript:
+{transcript}
 
-base_prompt = f'''
+Return ONLY a JSON object in this exact format:
+{{
+    "major": "extracted major name",
+    "classes_taken": ["Class Code: Class Name", "Class Code: Class Name", ...]
+}}
 
-# At each turn, if you decide to invoke any of the function(s), it should be wrapped with ```tool_code```. The python methods described below are imported and available, you can only use defined methods. The generated code should be readable and efficient. The response to a method will be wrapped in ```tool_output``` use it to call more tools or generate a helpful, friendly response. When using a ```tool_call``` think step by step why and how it should be used.
-# The following Python methods are available:
-def get_major_description(major : str):
-    """
-    Connects to the database to get the major's description, with all of the required classes and what a student should take. Returns 
-
-    :param major: string, name of the major of the student in the format major, type of degree
-    """
-
-Generate a list of classes the user has taken. Then, using your knowledge of their major, look for and generate a list of required classes for the major.
-# User's transcript:\n
-# '''
-
-def invoke(transcript_str):
-
-    messages = [
-        ("system", "You are a helpful AI assistant"),
-        ("user", base_prompt + (transcript_str))
+Be thorough and extract ALL classes mentioned in the transcript.""",
+        ),
     ]
-    
-    logging.info("Calling LLM")
-    ai_msg = llm.invoke(messages)
-    # tool_result = tools.extract_tool_call(ai_msg.content)
+)
 
-    # reps = 0
-    # while tool_result or reps < 5:
-    #     logging.info(f"{tool_result} was the result of the tool call")
-    #     messages.append(("user", tool_result))
-    #     ai_msg = llm.invoke(messages)
-    #     tool_result = tools.extract_tool_call(ai_msg.content)
-    #     reps += 1
+def invoke(transcript_str: str) -> str:
+    """
+    Analyze a transcript using structured prompt chaining.
 
-    logging.info("No tool call detected, LLM responded directly")
-    return ai_msg
+    Args:
+        transcript_str: The student's transcript text
+
+    Returns:
+        A detailed analysis of completed vs required classes
+    """
+    logging.info("Starting transcript analysis...")
+
+    # Step 1: Extract major and classes from transcript
+    logging.info("Step 1: Extracting data from transcript...")
+    extract_chain = extract_prompt | llm | JsonOutputParser()
+    extracted_data = extract_chain.invoke({"transcript": transcript_str})
+
+    major = extracted_data["major"]
+    classes_taken = extracted_data["classes_taken"]
+
+    # return analysis

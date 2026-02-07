@@ -82,7 +82,7 @@ async def generate_possible_classes(file: UploadFile = File(...)):
     msg = agent.invoke(text)
 
     # Return to frontend
-    return {"text": msg.content}
+    return {"text": msg}
 
 
 @app.post("/api/schedule")
