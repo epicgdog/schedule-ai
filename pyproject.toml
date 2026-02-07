@@ -59,7 +59,7 @@ dependencies = [
     "pypdf>=6.6.2",
     "python-dotenv==1.2.1",
     "python-multipart==0.0.21",
-    "pywin32==311",
+    "pywin32==311; sys_platform == 'win32'",
     "pyyaml==6.0.3",
     "referencing==0.37.0",
     "requests==2.32.5",
