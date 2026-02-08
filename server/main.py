@@ -78,9 +78,10 @@ async def generate_possible_classes(file: UploadFile = File(...)):
     for page in doc:
         text += page.get_text()
     doc.close()
-
+    # with open("extracted_text.txt", "w") as f:
+    #     f.write(text)
     msg = agent.invoke(text)
-
+    
     # Return to frontend
     return {"text": msg}
 
@@ -89,7 +90,7 @@ async def generate_possible_classes(file: UploadFile = File(...)):
 async def receive_schedule(request: ScheduleRequest):
     """Receive schedule data from the frontend."""
 
-    # schedule: receive everyday and which days are open and which days are not open and stuff
+    # schedule: receive everyday and which days ar e open and which days are not open and stuff
     # figure out a way to find # of consecutive ones in a 15 bit number
     # 100011100101010    --> this would have 5 consecutive, and we need to reutrn which power they are on
 
