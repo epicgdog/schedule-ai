@@ -21,6 +21,7 @@ interface GeAnalysisData {
     notes: string | null;
     major_matched: string | null;
   };
+  ge_progress?: Record<string, { earned: number; required: number; courses: string[]; waived?: boolean }>;
   ge_areas_needed: string[];
 }
 // function parseScheduleList(selectedTimes : Set<string>) : Map<String, String> {
@@ -109,6 +110,7 @@ const ScheduleForm: React.FC = () => {
                     takenGeClasses={geData.categorization.GE_Classes}
                     neededGeAreas={geData.ge_areas_needed}
                     waivedGeAreas={geData.major_exceptions?.waived_areas || []}
+                    geProgress={geData.ge_progress || {}}
                   />
 
                   {/* Summary Section */}
@@ -141,7 +143,7 @@ const ScheduleForm: React.FC = () => {
               </button>
             )}
             {step === 2 && (
-            <button type="submit" className="w-full py-4 bg-white text-black border-none rounded font-semibold text-lg cursor-pointer transition-colors hover:bg-gray-200">
+              <button type="submit" className="w-full py-4 bg-white text-black border-none rounded font-semibold text-lg cursor-pointer transition-colors hover:bg-gray-200">
                 Generate Schedule
               </button>
             )}

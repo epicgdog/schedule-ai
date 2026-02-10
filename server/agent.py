@@ -10,7 +10,42 @@ import json
 
 load_dotenv()
 
-GE_REQUIRED = ["A1", "A2", "A3", "B1", "B2", "B3", "B4", "C1", "C2", "C1/C2", "D", "E", "F"]
+# GE_REQUIRED = ["A1", "A2", "A3", "B1", "B2", "B3", "B4", "C1", "C2", "C1/C2", "D", "E", "F"]
+
+# Unit requirements per GE area (from SJSU GE Unit Overview)
+# Area 1 (A): English Communication & Critical Thinking — 9 units total
+#   A1 (1C Oral Communication) — 3 units
+#   A2 (1A Written Communication) — 3 units
+#   A3 (1B Critical Thinking) — 3 units
+# Area 2 (B4): Math/Quantitative Reasoning — 3 units
+# Area 3 (C): Arts & Humanities — 6 units total
+#   C1 (3A Arts) — 3 units
+#   C2 (3B Humanities) — 3 units
+# Area 4 (D): Social & Behavioral Sciences — 6 units (2 courses)
+# Area 5 (B): Physical & Biological Sciences — 7 units total
+#   B1 (5A Physical Science) — 3 units
+#   B2 (5B Life Science) — 3 units
+#   B3 (5C Laboratory) — 1 unit
+# Area 6 (F): Ethnic Studies — 3 units
+GE_UNITS_REQUIRED = {
+    "A1": 3,
+    "A2": 3,
+    "A3": 3,
+    "B1": 3,
+    "B2": 3,
+    "B3": 1,
+    "B4": 3,
+    "C1": 3,
+    "C2": 3,
+    "D": 6,   # 2 courses needed
+    "E": 3,
+    "F": 3,
+}
+
+# Default units per course (most are 3, B3 lab is 1)
+DEFAULT_COURSE_UNITS = {
+    "B3": 1,
+}
 
 # Configure logging
 logging.basicConfig(
@@ -60,74 +95,55 @@ IMPORTANT:
 )
 
 
-# def get_major_requirements(major: str) -> str:
-#     """
-#     Query the database for major requirements by program name.
-    
-#     Args:
-#         major: The major/program name to look up
-        
-#     Returns:
-#         The requirements description or empty string if not found
-#     """
-#     database = os.getenv("DATABASE")
-#     if not database:
-#         logging.warning("DATABASE env var not set")
-#         return ""
-    
-#     try:
-#         with sqlite3.connect(database) as conn:
-#             cursor = conn.cursor()
-#             # Search for the major in the reqs table (course_name field contains program names)
-#             cursor.execute(
-#                 "SELECT description FROM reqs WHERE course_name LIKE ? LIMIT 1",
-#                 (f"%{major}%",)
-#             )
-#             result = cursor.fetchone()
-#             return result[0] if result else ""
-#     except sqlite3.Error as e:
-#         logging.error(f"Database error fetching requirements for {major}: {e}")
-#         return ""
-    
+GE_REQUIRED = ["A1", "A2", "A3", "B1", "B2", "B3", "B4", "C1", "C2", "C1/C2", "D", "E", "F"]
 
 
-
-def get_ge_areas_still_needed(course_categorization: dict) -> list:
+def get_ge_areas_still_needed(course_categorization: dict) -> tuple:
     """
-    Find which GE areas are still needed based on courses taken.
-    Handles special case for area C which requires C1, C2, and one additional C course.
+    Find which GE areas are still needed based on courses taken,
+    tracking units earned vs required per area.
     
     Args:
         course_categorization: Result from get_ge_areas_for_courses
         
     Returns:
-        List of GE areas/subareas still needed
+        Tuple of (still_needed_list, ge_progress_dict)
+        - still_needed_list: List of GE area codes not fully satisfied
+        - ge_progress_dict: Dict of area -> {"earned": int, "required": int, "courses": list}
     """
-    areas_taken = set()
+    # Build progress tracking per area
+    ge_progress = {}
+    for area, required in GE_UNITS_REQUIRED.items():
+        ge_progress[area] = {
+            "earned": 0,
+            "required": required,
+            "courses": []
+        }
     
-    # Extract areas from taken GE classes
+    # Count units earned per area from taken GE classes
     for course in course_categorization["GE_Classes"]:
-        subarea = course["area"]  # e.g., A1, B2, C1, D, E, etc.
-        areas_taken.add(subarea)
+        area = course["area"]
+        if area in ge_progress:
+            units = DEFAULT_COURSE_UNITS.get(area, 3)
+            ge_progress[area]["earned"] += units
+            ge_progress[area]["courses"].append(course["name"])
     
-    # Find what's still needed
+    # Determine which areas are still needed
     still_needed = []
     
     for required in GE_REQUIRED:
         if required == "C1/C2":
-            # Special case: This represents the need for a third C course
-            # Count how many unique C courses have been taken
-            c_count = sum(1 for area in areas_taken if area in ["C1", "C2"])
-            
-            # Only add to needed if they don't have 3+ C courses
-            if c_count < 3:
+            # Special case: need an additional C course beyond C1 and C2
+            c1_courses = len(ge_progress.get("C1", {}).get("courses", []))
+            c2_courses = len(ge_progress.get("C2", {}).get("courses", []))
+            total_c = c1_courses + c2_courses
+            if total_c < 3:
                 still_needed.append(required)
-        else:
-            # Regular area requirement (A1, A2, A3, B1, B2, B3, B4, D, E, F)
-            if required not in areas_taken:
+        elif required in ge_progress:
+            if ge_progress[required]["earned"] < ge_progress[required]["required"]:
                 still_needed.append(required)
     
-    return still_needed
+    return still_needed, ge_progress
 
 
 
@@ -314,19 +330,37 @@ def invoke(transcript_str: str) -> str:
     
     # Step 4: Find GE areas still needed (before exceptions)
     logging.info("Step 4: Finding GE areas still needed...")
-    ge_areas_needed = get_ge_areas_still_needed(course_categorization)
+    ge_areas_needed, ge_progress = get_ge_areas_still_needed(course_categorization)
     logging.info(f"GE areas still needed (before exceptions): {ge_areas_needed}")
     
     # Step 5: Apply major-specific GE exceptions
     major_exceptions = get_major_ge_exceptions(major)
     if major_exceptions["waived_areas"]:
         logging.info(f"Step 5: Applying major exceptions for '{major_exceptions['major_matched']}': waived {major_exceptions['waived_areas']}")
-        # Remove waived areas from the needed list
-        # Handle D1 as partial D waiver — if D1 is waived, D is also waived
         waived = set(major_exceptions["waived_areas"])
-        if "D1" in waived:
-            waived.add("D")
+        
+        # Handle D1 specially: it only covers 3 of the 6 required D units
+        # Full "D" waiver covers all 6 units
+        if "D1" in waived and "D" not in waived:
+            # D1 = partial waiver, add 3 units to D progress
+            if "D" in ge_progress:
+                ge_progress["D"]["earned"] += 3
+                ge_progress["D"]["waived_units"] = 3
+                logging.info("D1 waiver: added 3/6 units to Area D")
+                # If now fully earned, remove from needed
+                if ge_progress["D"]["earned"] >= ge_progress["D"]["required"]:
+                    ge_areas_needed = [a for a in ge_areas_needed if a != "D"]
+            waived.discard("D1")  # Don't try to remove "D1" from needed list (it's not in there)
+        
+        # Remove fully waived areas from the needed list
         ge_areas_needed = [area for area in ge_areas_needed if area not in waived]
+        
+        # Mark fully waived areas as complete in progress
+        for area in waived:
+            if area in ge_progress:
+                ge_progress[area]["earned"] = ge_progress[area]["required"]
+                ge_progress[area]["waived"] = True
+        
         logging.info(f"GE areas still needed (after exceptions): {ge_areas_needed}")
     else:
         logging.info(f"Step 5: No major exceptions found for '{major}'")
@@ -342,6 +376,7 @@ def invoke(transcript_str: str) -> str:
         },
         "categorization": course_categorization,
         "major_exceptions": major_exceptions,
+        "ge_progress": ge_progress,
         "ge_areas_needed": ge_areas_needed
     }
     
