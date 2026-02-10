@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 import json
 import agent
-from modules import get_instructor_rating, get_open_classes_for
+from modules import get_instructor_rating, get_open_classes_for, get_ge_areas, get_courses_by_ge, get_open_ge_classes, get_major_ge_exceptions
 
 logging.basicConfig(
     level=logging.INFO,
@@ -174,6 +174,34 @@ async def receive_schedule(request: ScheduleRequest):
     logging.info(classes_with_best_rmp)
 
     return {"status": "success", "data": "hi"}
+
+
+@app.get("/api/ge_areas")
+async def get_all_ge_areas():
+    """Get all available GE Areas."""
+    areas = await get_ge_areas()
+    return {"status": "success", "areas": areas}
+
+
+@app.get("/api/ge_courses/{area}")
+async def get_ge_classes(area: str):
+    """Get all courses for a specific GE Area."""
+    courses = await get_courses_by_ge(area)
+    return {"status": "success", "courses": courses}
+
+
+@app.get("/api/open_ge_classes/{area}")
+async def get_open_ge_classes_endpoint(area: str):
+    """Get all open class sections satisfying a GE Area."""
+    classes = await get_open_ge_classes(area)
+    return {"status": "success", "classes": classes}
+
+
+@app.get("/api/major_exceptions/{major}")
+async def get_major_exceptions_endpoint(major: str):
+    """Get GE area exceptions/waivers for a given major."""
+    exceptions = get_major_ge_exceptions(major)
+    return {"status": "success", "exceptions": exceptions}
 
 
 if __name__ == "__main__":

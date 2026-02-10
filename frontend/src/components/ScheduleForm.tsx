@@ -1,65 +1,40 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import MajorDropdown from './MajorDropdown';
 import CourseInput from './CourseInput';
 import TimeSelector from './TimeSelector';
+import GeTracker from './GeTracker';
 
-
+interface GeAnalysisData {
+  major: string;
+  classes_taken: string[];
+  categorization: {
+    GE_Classes: { name: string; area: string }[];
+    "Everything Else": string[];
+  };
+  ap_credits?: {
+    original: string[];
+    translated: { ap_exam: string; sjsu_code: string; sjsu_title: string; ge_areas: string[]; notes?: string }[];
+    not_found: string[];
+  };
+  major_exceptions?: {
+    waived_areas: string[];
+    notes: string | null;
+    major_matched: string | null;
+  };
+  ge_areas_needed: string[];
+}
 // function parseScheduleList(selectedTimes : Set<string>) : Map<String, String> {
 //   const timesArray = Array.from(selectedTimes);
-//   const schedule = new Map(); // adding to a ma2p so all the times are grouped accordingly
-
-//   timesArray.map((val, _) => {
-//     const valArray = val.split("-");
-//     const day = valArray[0];
-//     const time = parseInt(valArray[1]);
-    
-//     if (schedule.has(day)){
-//       schedule.get(day).push(time);
-//     } else {
-//       schedule.set(day, [time]);
-//     }
-//   })
-//   console.log(schedule)
-  
-//   // condense each of the times basically and each fo the days has the availability
-//   schedule.forEach( (val, key) => {
-//     // key is the day, val is the times that are available
-//     const times:number[] = val.sort();
-//     let endingString = "";
-//     let prevTime = -1;
-//     let startIndex = 0;
-//     let endIndex = 0;
-//     times.map((val, index) => {
-//       const num = val;
-//       if (prevTime == -1 || (num - prevTime) == 1){ // change algorithm later
-//         prevTime = num;
-//         endIndex = index;
-//       } else {
-//         // chain is broken, add to endingString
-//         endingString += `${times[startIndex]}-${num} `
-//         startIndex = index + 1;
-//         endIndex = startIndex;
-//       }
-      
-//     })
-    
-//   })
-  
-//   console.log(schedule)
-//   return schedule;
- 
-// }
-
-
-
+// ... existing helper code ...
 export type Day = "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
 const DAYS: Day[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-const initialState = Object.fromEntries( DAYS.map((day) => [day, 0n]) ) as Record<Day, bigint>
+const initialState = Object.fromEntries(DAYS.map((day) => [day, 0n])) as Record<Day, bigint>
 const ScheduleForm: React.FC = () => {
   const [step, setStep] = useState(1);
   const [major, setMajor] = useState('');
-  const [selectedTimes, setSelectedTimes] = useState<Record<Day, bigint>>(initialState);  
+  const [geData, setGeData] = useState<GeAnalysisData | null>(null);
+  const [selectedTimes, setSelectedTimes] = useState<Record<Day, bigint>>(initialState);
 
   const handleNext = () => {
     setStep(step + 1);
@@ -69,9 +44,11 @@ const ScheduleForm: React.FC = () => {
     setStep(step - 1);
   };
 
-  useEffect(()=> {
-    
-  }, [])
+  const handleAnalysisComplete = (data: GeAnalysisData) => {
+    console.log("Analysis complete:", data);
+    setGeData(data);
+    if (data.major) setMajor(data.major);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,37 +92,56 @@ const ScheduleForm: React.FC = () => {
     }
   };
 
-return (
+  return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl p-10 border border-gray-700 rounded-lg bg-gray-900">
+      <div className="w-full max-w-4xl p-10 border border-gray-700 rounded-lg bg-gray-900">
         <h1 className="text-3xl font-bold text-center mb-8">Class Scheduler</h1>
         <form onSubmit={handleSubmit}>
-          {step === 1 && (
+          {/* {step === 1 && (
             <MajorDropdown major={major} setMajor={setMajor} />
+          )} */}
+          {step === 1 && (
+            <>
+              <CourseInput onAnalysisComplete={handleAnalysisComplete} />
+              {geData && (
+                <div className="mt-8 animate-fade-in">
+                  <GeTracker
+                    takenGeClasses={geData.categorization.GE_Classes}
+                    neededGeAreas={geData.ge_areas_needed}
+                    waivedGeAreas={geData.major_exceptions?.waived_areas || []}
+                  />
+
+                  {/* Summary Section */}
+                  <div className="mt-6 p-4 rounded bg-gray-800 border border-gray-700">
+                    <h3 className="text-xl font-semibold mb-2 text-blue-400">Analysis Summary</h3>
+                    <p>Major Detected: <span className="font-bold text-white">{geData.major}</span></p>
+                    <p>Total Classes Processed: <span className="font-bold text-white">{geData.classes_taken.length}</span></p>
+                    <p>GE Requirements Remaining: <span className="font-bold text-white">{geData.ge_areas_needed.length}</span></p>
+                  </div>
+                </div>
+              )}
+            </>
           )}
           {step === 2 && (
-            <CourseInput />
-          )}
-          {step === 3 && (
             <>
               <TimeSelector selectedTimes={selectedTimes} setSelectedTimes={setSelectedTimes} />
-           
+
             </>
           )}
 
-          <div className="flex justify-between mt-8">
+          <div className="flex justify-between mt-8 sticky bottom-0 bg-gray-900 py-4 border-t border-gray-800">
             {step > 1 && (
               <button type="button" className="px-8 py-3 border border-gray-600 rounded bg-gray-800 text-white cursor-pointer font-medium transition-colors hover:bg-gray-700" onClick={handleBack}>
                 Back
               </button>
             )}
-            {step < 3 && (
+            {step < 2 && (
               <button type="button" className="ml-auto px-8 py-3 border border-gray-600 rounded bg-white text-black cursor-pointer font-medium transition-colors hover:bg-gray-200 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed" onClick={handleNext} disabled={step === 1 && !major}>
                 Next
               </button>
             )}
-            {step === 3 && (
-              <button type="submit" className="w-full py-4 bg-white text-black border-none rounded font-semibold text-lg cursor-pointer transition-colors hover:bg-gray-200">
+            {step === 2 && (
+            <button type="submit" className="w-full py-4 bg-white text-black border-none rounded font-semibold text-lg cursor-pointer transition-colors hover:bg-gray-200">
                 Generate Schedule
               </button>
             )}

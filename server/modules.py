@@ -65,6 +65,109 @@ async def get_open_classes_for(course_name: str) -> list[dict]:
         return []
 
 
+def get_major_ge_exceptions(major: str) -> dict:
+    """
+    Get GE area exceptions/waivers for a given major.
+    
+    Args:
+        major: The student's major (e.g. "Computer Science", "Software Engineering")
+    
+    Returns:
+        Dict with:
+        - "waived_areas": list of GE area codes that are auto-satisfied
+        - "notes": explanation text
+        - "major_matched": the exact major name matched in the DB (or None)
+    """
+    try:
+        database = os.getenv("DATABASE")
+        with sqlite3.connect(database) as conn:
+            cursor = conn.cursor()
+            
+            # Try exact match first
+            cursor.execute(
+                "SELECT major, degree, waived_ge_areas, notes FROM major_ge_exceptions WHERE major = ? LIMIT 1",
+                (major,)
+            )
+            row = cursor.fetchone()
+            
+            if not row:
+                # Fuzzy match — the LLM might say "Computer Science" but the table has "Computer Science"
+                # or the table might have "Software Engineering" and the LLM says "Software Engineering, BS"
+                cursor.execute(
+                    "SELECT major, degree, waived_ge_areas, notes FROM major_ge_exceptions WHERE ? LIKE '%' || major || '%' OR major LIKE '%' || ? || '%' LIMIT 1",
+                    (major, major)
+                )
+                row = cursor.fetchone()
+            
+            if row:
+                waived_areas = [a.strip() for a in row[2].split(",")]
+                return {
+                    "waived_areas": waived_areas,
+                    "notes": row[3],
+                    "major_matched": f"{row[0]}, {row[1]}"
+                }
+            
+            return {"waived_areas": [], "notes": None, "major_matched": None}
+    except Exception as e:
+        logging.error(f"Error retrieving major GE exceptions: {e}")
+        return {"waived_areas": [], "notes": None, "major_matched": None}
+
+
+async def get_ge_areas() -> list[str]:
+    """Get unique GE areas."""
+    try:
+        database = os.getenv("DATABASE")
+        with sqlite3.connect(database) as conn:
+            cursor = conn.cursor()
+            sql = "SELECT DISTINCT area FROM ge_courses ORDER BY area"
+            cursor.execute(sql)
+            return [row[0] for row in cursor.fetchall()]
+    except Exception as e:
+        logging.error(f"Error retrieving GE areas: {e}")
+        return []
+
+
+async def get_courses_by_ge(area: str) -> list[dict]:
+    """Get all courses for a specific GE area."""
+    try:
+        database = os.getenv("DATABASE")
+        with sqlite3.connect(database) as conn:
+            cursor = conn.cursor()
+            sql = "SELECT area, code, title FROM ge_courses WHERE area = ?"
+            cursor.execute(sql, (area,))
+            return [{"area": row[0], "code": row[1], "title": row[2]} for row in cursor.fetchall()]
+    except Exception as e:
+        logging.error(f"Error retrieving GE courses for area {area}: {e}")
+        return []
+
+
+async def get_open_ge_classes(area: str) -> list[dict]:
+    """
+    Get all OPEN class sections for a specific GE area.
+    This performs a JOIN between ge_courses and sjsu_classes.
+    """
+    try:
+        database = os.getenv("DATABASE")
+        # Course codes in sjsu_classes might be formatted differently (e.g. "CS 47" vs "CS 047")
+        # For now assuming exact string match on course code/name
+        
+        with sqlite3.connect(database) as conn:
+            cursor = conn.cursor()
+            # Join ge_courses and sjsu_classes on course code
+            # sjsu_classes.course_name corresponds to ge_courses.code
+            sql = """
+            SELECT s.* 
+            FROM sjsu_classes s
+            JOIN ge_courses g ON s.course_name = g.code
+            WHERE g.area = ? AND s.open_seats > 0
+            """
+            cursor.execute(sql, (area,))
+            return parse_list(cursor.fetchall())
+    except Exception as e:
+        logging.error(f"Error retrieving open GE classes for area {area}: {e}")
+        return []
+
+
 async def get_instructor_rating(query: str, count: int = 5) -> list[dict]:
     """
     Scrapes RateMyProfessors using their GraphQL API to get instructor ratings.
