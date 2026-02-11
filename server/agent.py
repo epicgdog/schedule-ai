@@ -1,11 +1,11 @@
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
+from sqlalchemy import create_engine, MetaData, select
 from modules import get_major_ge_exceptions
 import logging
 from dotenv import load_dotenv
 import os
-import sqlite3
 import json
 
 load_dotenv()
@@ -52,6 +52,17 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+# ── SQLAlchemy setup ─────────────────────────────────────────────
+# Create engine and reflect tables once at module level
+DATABASE = os.getenv("DATABASE")
+engine = create_engine(f"sqlite:///{DATABASE}")
+metadata = MetaData()
+metadata.reflect(bind=engine)
+
+# Table references
+ge_courses_table = metadata.tables["ge_courses"]
+ap_table = metadata.tables["ap_articulation"]
+
 # Initialize LLM
 llm = ChatOpenAI(
     model="gemma3:12b",
@@ -73,6 +84,7 @@ extract_prompt = ChatPromptTemplate.from_messages(
 1. The student's major (as listed in the transcript)
 2. A list of all college classes the student has taken and passed (use course codes like "CS 46A", "MATH 30")
 3. A list of any AP (Advanced Placement) exam credits that appear on the transcript
+    -If the AP Exam says "subscore" after don not include the word "subscore" in the output
 
 Transcript:
 {transcript}
@@ -147,11 +159,12 @@ def get_ge_areas_still_needed(course_categorization: dict) -> tuple:
 
 
 
-def get_ge_areas_for_courses(courses: list) -> dict:
+def get_ge_areas_for_courses(conn, courses: list) -> dict:
     """
     Categorize courses into GE courses and non-GE courses.
     
     Args:
+        conn: SQLAlchemy connection
         courses: List of course codes
         
     Returns:
@@ -159,129 +172,127 @@ def get_ge_areas_for_courses(courses: list) -> dict:
         - "GE_Classes": List of dicts with "name" and "area" keys
         - "Everything Else": List of course names not found in GE courses
     """
-    database = os.getenv("DATABASE")
-    if not database:
-        logging.warning("DATABASE env var not set")
-        return {"GE_Classes": [], "Everything Else": courses}
-    
+    gc = ge_courses_table
     result = {
         "GE_Classes": [],
         "Everything Else": []
     }
     
-    try:
-        with sqlite3.connect(database) as conn:
-            cursor = conn.cursor()
-            for course in courses:
-                # Query for the course in ge_courses table
-                cursor.execute(
-                    "SELECT title, area FROM ge_courses WHERE code = ? LIMIT 1",
-                    (course,)
-                )
-                row = cursor.fetchone()
-                if row:
-                    # Found in GE courses
-                    result["GE_Classes"].append({
-                        "name": row[0],
-                        "area": row[1]
-                    })
-                else:
-                    # Not found in GE courses
-                    result["Everything Else"].append(course)
-    except sqlite3.Error as e:
-        logging.error(f"Database error categorizing courses: {e}")
-        result["Everything Else"] = courses
+    for course in courses:
+        query = (
+            select(gc.c.title, gc.c.area)
+            .where(gc.c.code == course)
+            .limit(1)
+        )
+        row = conn.execute(query).fetchone()
+
+        if row:
+            result["GE_Classes"].append({
+                "name": row.title,
+                "area": row.area
+            })
+        else:
+            result["Everything Else"].append(course)
     
     return result
 
 
-
-
-def get_ge_course_area(course_code: str) -> str:
+def get_ge_course_area(conn, course_code: str) -> str:
     """
     Query the database for a GE course's area by course code.
     
     Args:
+        conn: SQLAlchemy connection
         course_code: The course code to look up
         
     Returns:
         The area or empty string if not found
     """
-    database = os.getenv("DATABASE")
-    if not database:
-        logging.warning("DATABASE env var not set")
-        return ""
-    
-    try:
-        with sqlite3.connect(database) as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                "SELECT Area FROM ge_courses WHERE code = ? LIMIT 1",
-                (course_code,)
-            )
-            result = cursor.fetchone()
-            return result[0] if result else ""
-    except sqlite3.Error as e:
-        logging.error(f"Database error fetching area for {course_code}: {e}")
-        return ""
+    gc = ge_courses_table
+    query = (
+        select(gc.c.area)
+        .where(gc.c.code == course_code)
+        .limit(1)
+    )
+    row = conn.execute(query).fetchone()
+    return row.area if row else ""
 
 
-def translate_ap_courses(ap_credits: list) -> dict:
+def translate_ap_courses(conn, ap_credits: list) -> dict:
     """
     Look up AP exam credits in ap_articulation table and return their
     SJSU course equivalents.
     
     Args:
-        ap_credits: List of AP exam names from transcript (e.g. ["AP Calculus AB", "AP English Language and Composition"])
+        conn: SQLAlchemy connection
+        ap_credits: List of AP exam names from transcript
     
     Returns:
         Dict with:
-        - "translated": List of dicts {"ap_exam", "sjsu_code", "sjsu_title", "ge_areas" (list), "notes"}
-        - "not_found": List of AP exam names that had no match in the table
+        - "translated": List of dicts with ap_exam, sjsu_code, sjsu_title, ge_areas, units, us1-3, lab_credit, notes
+        - "not_found": List of AP exam names that had no match
     """
-    database = os.getenv("DATABASE")
-    if not database:
-        logging.warning("DATABASE env var not set")
-        return {"translated": [], "not_found": ap_credits}
-    
+    ap = ap_table
     result = {"translated": [], "not_found": []}
     
-    try:
-        with sqlite3.connect(database) as conn:
-            cursor = conn.cursor()
-            for ap_exam in ap_credits:
-                # Fuzzy match: try exact first, then LIKE
-                cursor.execute(
-                    "SELECT sjsu_course_code, sjsu_course_title, ge_area, notes FROM ap_articulation WHERE ap_exam = ? ORDER BY min_score ASC LIMIT 1",
-                    (ap_exam,)
+    for ap_exam in ap_credits:
+        # Exact match
+        query = (
+            select(
+                ap.c.sjsu_course_code,
+                ap.c.sjsu_course_title,
+                ap.c.ge_area,
+                ap.c.units_granted,
+                ap.c.us1,
+                ap.c.us2,
+                ap.c.us3,
+                ap.c.lab_credit,
+                ap.c.notes,
+            )
+            .where(ap.c.ap_exam == ap_exam)
+            .order_by(ap.c.min_score.asc())
+            .limit(1)
+        )
+        row = conn.execute(query).fetchone()
+        
+        # Fallback: fuzzy match
+        if not row:
+            query = (
+                select(
+                    ap.c.sjsu_course_code,
+                    ap.c.sjsu_course_title,
+                    ap.c.ge_area,
+                    ap.c.units_granted,
+                    ap.c.us1,
+                    ap.c.us2,
+                    ap.c.us3,
+                    ap.c.lab_credit,
+                    ap.c.notes,
                 )
-                row = cursor.fetchone()
-                
-                if not row:
-                    # Try a fuzzy match (the LLM might not use the exact name)
-                    cursor.execute(
-                        "SELECT sjsu_course_code, sjsu_course_title, ge_area, notes FROM ap_articulation WHERE ap_exam LIKE ? ORDER BY min_score ASC LIMIT 1",
-                        (f"%{ap_exam}%",)
-                    )
-                    row = cursor.fetchone()
-                
-                if row:
-                    # Parse comma-separated GE areas into a list
-                    ge_areas = [a.strip() for a in row[2].split(",")] if row[2] else []
-                    result["translated"].append({
-                        "ap_exam": ap_exam,
-                        "sjsu_code": row[0],
-                        "sjsu_title": row[1],
-                        "ge_areas": ge_areas,
-                        "notes": row[3]
-                    })
-                    logging.info(f"AP Translated: {ap_exam} → {row[0]} (GE: {ge_areas})")
-                else:
-                    result["not_found"].append(ap_exam)
-                    logging.warning(f"AP exam not found in articulation table: {ap_exam}")
-    except sqlite3.Error as e:
-        logging.error(f"Database error translating AP courses: {e}")
-        result["not_found"] = ap_credits
+                .where(ap.c.ap_exam.like(f"%{ap_exam}%"))
+                .order_by(ap.c.min_score.asc())
+                .limit(1)
+            )
+            row = conn.execute(query).fetchone()
+        
+        if row:
+            ge_areas = [a.strip() for a in row.ge_area.split(",")] if row.ge_area else []
+            result["translated"].append({
+                "ap_exam": ap_exam,
+                "sjsu_code": row.sjsu_course_code,
+                "sjsu_title": row.sjsu_course_title,
+                "ge_areas": ge_areas,
+                "units": row.units_granted,
+                "us1": bool(row.us1),
+                "us2": bool(row.us2),
+                "us3": bool(row.us3),
+                "lab_credit": bool(row.lab_credit),
+                "notes": row.notes
+            })
+            logging.info(f"AP Translated: {ap_exam} → {row.sjsu_course_code} (GE: {ge_areas})")
+        else:
+            result["not_found"].append(ap_exam)
+            logging.warning(f"AP exam not found in articulation table: {ap_exam}")
     
     return result
 
@@ -299,34 +310,37 @@ def invoke(transcript_str: str) -> str:
     logging.info("Starting transcript analysis...")
 
     # Step 1: Extract major, classes, and AP credits from transcript
+    ### FUTURE REGEX ###
     logging.info("Step 1: Extracting data from transcript...")
     extract_chain = extract_prompt | llm | JsonOutputParser()
     extracted_data = extract_chain.invoke({"transcript": transcript_str})
-
+    
     major = extracted_data["major"]
     classes_taken = extracted_data["classes_taken"]
     ap_credits = extracted_data.get("ap_credits", [])
-    
+    print(major)
     logging.info(f"Found {len(classes_taken)} college courses and {len(ap_credits)} AP credits")
 
-    # Step 2: Translate AP credits to SJSU equivalents
-    ap_translation = {"translated": [], "not_found": []}
-    if ap_credits:
-        logging.info("Step 2: Translating AP credits to SJSU equivalents...")
-        ap_translation = translate_ap_courses(ap_credits)
+    # Open a single database connection for all queries
+    with engine.connect() as conn:
+        # Step 2: Translate AP credits to SJSU equivalents
+        ap_translation = {"translated": [], "not_found": []}
+        if ap_credits:
+            logging.info("Step 2: Translating AP credits to SJSU equivalents...")
+            ap_translation = translate_ap_courses(conn, ap_credits)
+            
+            # Add translated AP courses to the classes_taken list
+            for t in ap_translation["translated"]:
+                classes_taken.append(t["sjsu_code"])
+            
+            logging.info(f"Translated {len(ap_translation['translated'])} AP credits, {len(ap_translation['not_found'])} unmatched")
         
-        # Add translated AP courses to the classes_taken list
-        for t in ap_translation["translated"]:
-            classes_taken.append(t["sjsu_code"])
+        # Step 3: Categorize classes into GE and non-GE
+        logging.info("Step 3: Categorizing courses into GE and non-GE...")
+        course_categorization = get_ge_areas_for_courses(conn, classes_taken)
         
-        logging.info(f"Translated {len(ap_translation['translated'])} AP credits, {len(ap_translation['not_found'])} unmatched")
-    
-    # Step 3: Categorize classes into GE and non-GE
-    logging.info("Step 3: Categorizing courses into GE and non-GE...")
-    course_categorization = get_ge_areas_for_courses(classes_taken)
-    
-    logging.info(f"GE classes taken: {len(course_categorization['GE_Classes'])}")
-    logging.info(f"Non-GE classes taken: {len(course_categorization['Everything Else'])}")
+        logging.info(f"GE classes taken: {len(course_categorization['GE_Classes'])}")
+        logging.info(f"Non-GE classes taken: {len(course_categorization['Everything Else'])}")
     
     # Step 4: Find GE areas still needed (before exceptions)
     logging.info("Step 4: Finding GE areas still needed...")

@@ -2,9 +2,10 @@ import argparse
 import logging
 import os
 import sqlite3
+from pathlib import Path
 
 from dotenv import load_dotenv
-from scrappers.ge_scraper import scrape_url, extract_ge_areas
+from scrapers.ge_scraper import scrape_url, extract_ge_areas
 
 
 import re
@@ -12,7 +13,9 @@ import requests
 from bs4 import BeautifulSoup
 from collections import defaultdict
 
-load_dotenv()
+# Resolve paths relative to project root (parent of sjsu-data-retrival/)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(PROJECT_ROOT / ".env")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,7 +24,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-DATABASE = os.getenv("DATABASE")
+DATABASE = str(PROJECT_ROOT / os.getenv("DATABASE", "db/sql.db"))
 GE_URL = "https://catalog.sjsu.edu/preview_program.php?catoid=10&poid=2524"
 
 

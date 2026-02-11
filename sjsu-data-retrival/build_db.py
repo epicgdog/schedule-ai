@@ -21,12 +21,18 @@ Tables built:
 import argparse
 import asyncio
 import logging
+import os
 import sys
 import time
+from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
+# Resolve paths relative to project root (parent of sjsu-data-retrival/)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(PROJECT_ROOT / ".env")
+
+DATABASE = str(PROJECT_ROOT / os.getenv("DATABASE", "db/sql.db"))
 
 logging.basicConfig(
     level=logging.INFO,
@@ -42,17 +48,11 @@ logger = logging.getLogger(__name__)
 
 def load_ge(force: bool = False) -> None:
     """Load GE course data."""
-    from ge_loader import database_setup, main as _main
-    import ge_loader
-    # Simulate args
-    ge_loader.database_setup()
-
-    from ge_loader import GE_URL
+    from ge_loader import database_setup, GE_URL, extract_courses_from_ge_data, upsert_ge_courses
     from scrapers.ge_scraper import scrape_url, extract_ge_areas
-    from ge_loader import extract_courses_from_ge_data, upsert_ge_courses
-    import sqlite3, os
+    import sqlite3
 
-    database = os.getenv("DATABASE")
+    database_setup()
     soup = scrape_url(GE_URL)
     if not soup:
         logger.error("GE: Failed to scrape URL")
@@ -63,7 +63,7 @@ def load_ge(force: bool = False) -> None:
         return
     courses = extract_courses_from_ge_data(ge_data)
     if force:
-        with sqlite3.connect(database) as conn:
+        with sqlite3.connect(DATABASE) as conn:
             conn.execute("DELETE FROM ge_courses")
             conn.commit()
     upsert_ge_courses(courses)
@@ -75,9 +75,8 @@ def load_ap(force: bool = False) -> None:
     from ap_loader import database_setup_force, upsert_ap_data, DEFAULT_AP_DATA
     database_setup_force()
     if force:
-        import sqlite3, os
-        database = os.getenv("DATABASE")
-        with sqlite3.connect(database) as conn:
+        import sqlite3
+        with sqlite3.connect(DATABASE) as conn:
             conn.execute("DELETE FROM ap_articulation")
             conn.commit()
     upsert_ap_data(DEFAULT_AP_DATA)
@@ -87,11 +86,10 @@ def load_ap(force: bool = False) -> None:
 def load_major_exceptions(force: bool = False) -> None:
     """Load major-specific GE exceptions."""
     from major_exceptions_loader import database_setup, upsert_exceptions, EXCEPTIONS_DATA
-    import sqlite3, os
-    database = os.getenv("DATABASE")
+    import sqlite3
     database_setup()
     if force:
-        with sqlite3.connect(database) as conn:
+        with sqlite3.connect(DATABASE) as conn:
             conn.execute("DELETE FROM major_ge_exceptions")
             conn.commit()
     upsert_exceptions(EXCEPTIONS_DATA)
@@ -128,11 +126,10 @@ def load_majors(force: bool = False) -> None:
 def load_courses(force: bool = False) -> None:
     """Load current SJSU course schedule."""
     from current_course_loader import database_setup, scrape_and_load
-    import sqlite3, os
-    database = os.getenv("DATABASE")
+    import sqlite3
     database_setup()
     if force:
-        with sqlite3.connect(database) as conn:
+        with sqlite3.connect(DATABASE) as conn:
             conn.execute("DELETE FROM sjsu_classes")
             conn.commit()
     asyncio.run(scrape_and_load())
