@@ -169,7 +169,7 @@ def get_ge_areas_for_courses(conn, courses: list) -> dict:
         
     Returns:
         Dictionary with:
-        - "GE_Classes": List of dicts with "name" and "area" keys
+        - "GE_Classes": List of dicts with name, area, us1, us2, us3, lab_credit
         - "Everything Else": List of course names not found in GE courses
     """
     gc = ge_courses_table
@@ -180,7 +180,7 @@ def get_ge_areas_for_courses(conn, courses: list) -> dict:
     
     for course in courses:
         query = (
-            select(gc.c.title, gc.c.area)
+            select(gc.c.title, gc.c.area, gc.c.us1, gc.c.us2, gc.c.us3, gc.c.lab_credit)
             .where(gc.c.code == course)
             .limit(1)
         )
@@ -189,7 +189,11 @@ def get_ge_areas_for_courses(conn, courses: list) -> dict:
         if row:
             result["GE_Classes"].append({
                 "name": row.title,
-                "area": row.area
+                "area": row.area,
+                "us1": bool(row.us1),
+                "us2": bool(row.us2),
+                "us3": bool(row.us3),
+                "lab_credit": bool(row.lab_credit),
             })
         else:
             result["Everything Else"].append(course)
@@ -379,7 +383,43 @@ def invoke(transcript_str: str) -> str:
     else:
         logging.info(f"Step 5: No major exceptions found for '{major}'")
     
-    # Step 6: Return the analysis
+    # Step 6: Compute American Institutions (US) area progress
+    logging.info("Step 6: Computing US area progress...")
+    us_progress = {
+        "US1": {"satisfied": False, "courses": []},
+        "US2": {"satisfied": False, "courses": []},
+        "US3": {"satisfied": False, "courses": []},
+    }
+
+    # Check GE classes for US credit
+    for ge_class in course_categorization["GE_Classes"]:
+        if ge_class.get("us1"):
+            us_progress["US1"]["satisfied"] = True
+            us_progress["US1"]["courses"].append(ge_class["name"])
+        if ge_class.get("us2"):
+            us_progress["US2"]["satisfied"] = True
+            us_progress["US2"]["courses"].append(ge_class["name"])
+        if ge_class.get("us3"):
+            us_progress["US3"]["satisfied"] = True
+            us_progress["US3"]["courses"].append(ge_class["name"])
+
+    # Check AP credits for US credit
+    for ap in ap_translation.get("translated", []):
+        if ap.get("us1"):
+            us_progress["US1"]["satisfied"] = True
+            us_progress["US1"]["courses"].append(f"{ap['ap_exam']} (AP)")
+        if ap.get("us2"):
+            us_progress["US2"]["satisfied"] = True
+            us_progress["US2"]["courses"].append(f"{ap['ap_exam']} (AP)")
+        if ap.get("us3"):
+            us_progress["US3"]["satisfied"] = True
+            us_progress["US3"]["courses"].append(f"{ap['ap_exam']} (AP)")
+
+    us_areas_needed = [area for area, info in us_progress.items() if not info["satisfied"]]
+    logging.info(f"US areas satisfied: {[a for a, i in us_progress.items() if i['satisfied']]}")
+    logging.info(f"US areas still needed: {us_areas_needed}")
+    
+    # Step 7: Return the analysis
     result = {
         "major": major,
         "classes_taken": classes_taken,
@@ -391,7 +431,16 @@ def invoke(transcript_str: str) -> str:
         "categorization": course_categorization,
         "major_exceptions": major_exceptions,
         "ge_progress": ge_progress,
-        "ge_areas_needed": ge_areas_needed
+        "ge_areas_needed": ge_areas_needed,
+        "us_progress": us_progress,
+        "us_areas_needed": us_areas_needed,
+        "upper_division_progress": {
+            "R": {"satisfied": False, "courses": []},
+            "S": {"satisfied": False, "courses": []},
+            "V": {"satisfied": False, "courses": []},
+        },
+        "upper_division_needed": ["R", "S", "V"],
+        "pe_progress": {"earned": 0, "required": 2, "courses": []},
     }
     
     logging.info("Transcript analysis complete")

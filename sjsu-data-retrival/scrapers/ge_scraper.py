@@ -3,6 +3,46 @@ import requests
 from bs4 import BeautifulSoup
 from collections import defaultdict
 
+# ── American Institutions course sets ────────────────────────────
+# Source: SJSU Catalog — American Institutions Requirements
+# US1 = U.S. History, US2 = U.S. Constitution, US3 = CA State/Local Gov
+#
+# Courses that satisfy US1 only:
+US1_COURSES = {
+    "AMS 10", "HIST 15", "HIST 20A", "HIST 20B",
+    "HIST 170", "HIST 170S", "HIST 188",
+}
+
+# Courses that satisfy US2 + US3 (Constitution + CA Gov):
+US23_COURSES = {
+    "AMS 11", "POLS 1", "POLS 15", "POLS 16", "POLS 170V",
+}
+
+# Courses that satisfy US3 only (CA Government):
+US3_ONLY_COURSES = {
+    "HIST 189A", "HIST 189B", "POLS 102",
+}
+
+# Sequences that satisfy all US1+US2+US3 (both courses required):
+# The 'B' course in each pair carries the US123 credit
+US123_COURSES = {
+    "AFAM 2A", "AFAM 2B",
+    "AMS 1A", "AMS 1B",
+    "AAS 33A", "AAS 33B",
+    "CCS 10A", "CCS 10B",
+}
+
+
+def get_us_flags(course_code: str) -> tuple[bool, bool, bool]:
+    """
+    Determine US1, US2, US3 flags for a given course code.
+    Returns (us1, us2, us3).
+    """
+    us1 = course_code in US1_COURSES or course_code in US123_COURSES
+    us2 = course_code in US23_COURSES or course_code in US123_COURSES
+    us3 = course_code in US23_COURSES or course_code in US3_ONLY_COURSES or course_code in US123_COURSES
+    return us1, us2, us3
+
 
 def parse_course_string(course_str: str) -> dict:
     """
@@ -88,6 +128,12 @@ def extract_ge_areas(soup: BeautifulSoup) -> dict:
                             if link:
                                 course_name = link.get_text(strip=True)
                                 parsed_course = parse_course_string(course_name)
+                                # Add US and lab flags
+                                us1, us2, us3 = get_us_flags(parsed_course['code'])
+                                parsed_course['us1'] = us1
+                                parsed_course['us2'] = us2
+                                parsed_course['us3'] = us3
+                                parsed_course['lab_credit'] = subarea_id == 'B3'
                                 ge_dict[area_letter][subarea_id].append(parsed_course)
         else:
             # Pattern 2: Area without subareas (D, E, F, R, S, V)
@@ -99,6 +145,12 @@ def extract_ge_areas(soup: BeautifulSoup) -> dict:
                     if link:
                         course_name = link.get_text(strip=True)
                         parsed_course = parse_course_string(course_name)
+                        # Add US and lab flags
+                        us1, us2, us3 = get_us_flags(parsed_course['code'])
+                        parsed_course['us1'] = us1
+                        parsed_course['us2'] = us2
+                        parsed_course['us3'] = us3
+                        parsed_course['lab_credit'] = False  # non-subarea sections aren't B3
                         ge_dict[area_letter][area_letter].append(parsed_course)
     
     return ge_dict

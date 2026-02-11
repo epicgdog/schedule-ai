@@ -23,15 +23,35 @@ interface GeProgressEntry {
 }
 
 interface GeTrackerProps {
-    takenGeClasses: { name: string; area: string }[];
+    takenGeClasses: { name: string; area: string; us1?: boolean; us2?: boolean; us3?: boolean; lab_credit?: boolean }[];
     neededGeAreas: string[];
     waivedGeAreas?: string[];
     geProgress?: Record<string, GeProgressEntry>;
+    usProgress?: Record<string, { satisfied: boolean; courses: string[] }>;
+    usAreasNeeded?: string[];
+    upperDivisionProgress?: Record<string, { satisfied: boolean; courses: string[] }>;
+    upperDivisionNeeded?: string[];
+    peProgress?: { earned: number; required: number; courses: string[] };
 }
 
 const GE_AREAS = ["A1", "A2", "A3", "B1", "B2", "B3", "B4", "C1", "C2", "C1/C2", "D", "E", "F"];
 
-const GeTracker: React.FC<GeTrackerProps> = ({ takenGeClasses, neededGeAreas, waivedGeAreas = [], geProgress = {} }) => {
+const US_AREAS: { key: string; label: string }[] = [
+    { key: "US1", label: "U.S. History" },
+    { key: "US2", label: "U.S. Constitution" },
+    { key: "US3", label: "California Government" },
+];
+
+const UPPER_DIVISION_AREAS: { key: string; label: string }[] = [
+    { key: "R", label: "Earth, Environment & Sustainability" },
+    { key: "S", label: "Self, Society & Equality in the U.S." },
+    { key: "V", label: "Cultures & Global Understanding" },
+];
+
+const GeTracker: React.FC<GeTrackerProps> = ({
+    takenGeClasses, neededGeAreas, waivedGeAreas = [], geProgress = {},
+    usProgress = {}, upperDivisionProgress = {}, peProgress = { earned: 0, required: 2, courses: [] },
+}) => {
     const [openClasses, setOpenClasses] = useState<Record<string, GeClass[]>>({});
     const [loadingArea, setLoadingArea] = useState<string | null>(null);
     const [expandedArea, setExpandedArea] = useState<string | null>(null);
@@ -212,6 +232,160 @@ const GeTracker: React.FC<GeTrackerProps> = ({ takenGeClasses, neededGeAreas, wa
                     {error}
                 </div>
             )}
+
+            {/* American Institutions (US) Requirements */}
+            <div className="mt-8">
+                <h2 className="text-2xl font-bold mb-6 text-white border-b border-gray-700 pb-2">American Institutions</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {US_AREAS.map(({ key, label }) => {
+                        const progress = usProgress[key];
+                        const isSatisfied = progress?.satisfied ?? false;
+                        const courses = progress?.courses ?? [];
+
+                        return (
+                            <div
+                                key={key}
+                                className={`p-4 rounded-lg border transition-all ${isSatisfied
+                                    ? 'bg-green-900/20 border-green-700/50'
+                                    : 'bg-gray-800 border-gray-600'
+                                    }`}
+                            >
+                                <div className="flex justify-between items-start mb-2">
+                                    <div>
+                                        <span className="text-lg font-bold text-gray-200">{key}</span>
+                                        <p className="text-xs text-gray-400 mt-0.5">{label}</p>
+                                    </div>
+                                    {isSatisfied ? (
+                                        <span className="px-2 py-1 text-xs font-semibold bg-green-500/20 text-green-400 rounded-full">
+                                            Completed
+                                        </span>
+                                    ) : (
+                                        <span className="px-2 py-1 text-xs font-semibold bg-red-500/20 text-red-400 rounded-full">
+                                            Missing
+                                        </span>
+                                    )}
+                                </div>
+
+                                {isSatisfied && courses.length > 0 ? (
+                                    <div className="text-sm text-gray-400">
+                                        {courses.map((course, i) => (
+                                            <p key={i} className="font-medium text-gray-300">{course}</p>
+                                        ))}
+                                    </div>
+                                ) : !isSatisfied ? (
+                                    <p className="text-sm text-gray-500 italic">Not yet satisfied</p>
+                                ) : null}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Upper Division GE (SJSU Studies) */}
+            <div className="mt-8">
+                <h2 className="text-2xl font-bold mb-6 text-white border-b border-gray-700 pb-2">SJSU Studies — Upper Division</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {UPPER_DIVISION_AREAS.map(({ key, label }) => {
+                        const progress = upperDivisionProgress[key];
+                        const isSatisfied = progress?.satisfied ?? false;
+                        const courses = progress?.courses ?? [];
+
+                        return (
+                            <div
+                                key={key}
+                                className={`p-4 rounded-lg border transition-all ${isSatisfied
+                                        ? 'bg-green-900/20 border-green-700/50'
+                                        : 'bg-gray-800 border-gray-600'
+                                    }`}
+                            >
+                                <div className="flex justify-between items-start mb-2">
+                                    <div>
+                                        <span className="text-lg font-bold text-gray-200">Area {key}</span>
+                                        <p className="text-xs text-gray-400 mt-0.5">{label}</p>
+                                    </div>
+                                    {isSatisfied ? (
+                                        <span className="px-2 py-1 text-xs font-semibold bg-green-500/20 text-green-400 rounded-full">
+                                            Completed
+                                        </span>
+                                    ) : (
+                                        <span className="px-2 py-1 text-xs font-semibold bg-red-500/20 text-red-400 rounded-full">
+                                            Missing
+                                        </span>
+                                    )}
+                                </div>
+
+                                {isSatisfied && courses.length > 0 ? (
+                                    <div className="text-sm text-gray-400">
+                                        {courses.map((course, i) => (
+                                            <p key={i} className="font-medium text-gray-300">{course}</p>
+                                        ))}
+                                    </div>
+                                ) : !isSatisfied ? (
+                                    <p className="text-sm text-gray-500 italic">Not yet tracked</p>
+                                ) : null}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Physical Education (PE / Kinesiology) */}
+            <div className="mt-8">
+                <h2 className="text-2xl font-bold mb-6 text-white border-b border-gray-700 pb-2">Physical Education</h2>
+                <div className={`p-4 rounded-lg border transition-all ${peProgress.earned >= peProgress.required
+                        ? 'bg-green-900/20 border-green-700/50'
+                        : peProgress.earned > 0
+                            ? 'bg-yellow-900/20 border-yellow-700/50'
+                            : 'bg-gray-800 border-gray-600'
+                    }`}>
+                    <div className="flex justify-between items-start mb-2">
+                        <div>
+                            <span className="text-lg font-bold text-gray-200">Kinesiology Activity</span>
+                            <p className="text-xs text-gray-400 mt-0.5">2 units of KIN activity courses required</p>
+                        </div>
+                        {peProgress.earned >= peProgress.required ? (
+                            <span className="px-2 py-1 text-xs font-semibold bg-green-500/20 text-green-400 rounded-full">
+                                Completed
+                            </span>
+                        ) : peProgress.earned > 0 ? (
+                            <span className="px-2 py-1 text-xs font-semibold bg-yellow-500/20 text-yellow-400 rounded-full">
+                                In Progress
+                            </span>
+                        ) : (
+                            <span className="px-2 py-1 text-xs font-semibold bg-red-500/20 text-red-400 rounded-full">
+                                Missing
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="mb-2">
+                        <div className="flex justify-between text-xs text-gray-400 mb-1">
+                            <span>{peProgress.earned}/{peProgress.required} units</span>
+                            <span>{peProgress.courses.length} course{peProgress.courses.length !== 1 ? 's' : ''}</span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-1.5">
+                            <div
+                                className={`h-1.5 rounded-full transition-all ${peProgress.earned >= peProgress.required ? 'bg-green-500'
+                                        : peProgress.earned > 0 ? 'bg-yellow-500'
+                                            : 'bg-gray-600'
+                                    }`}
+                                style={{ width: `${Math.min(100, (peProgress.earned / peProgress.required) * 100)}%` }}
+                            />
+                        </div>
+                    </div>
+
+                    {peProgress.courses.length > 0 ? (
+                        <div className="text-sm text-gray-400">
+                            {peProgress.courses.map((course, i) => (
+                                <p key={i} className="font-medium text-gray-300">✓ {course}</p>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-gray-500 italic">Not yet tracked</p>
+                    )}
+                </div>
+            </div>
         </div>
     );
 };

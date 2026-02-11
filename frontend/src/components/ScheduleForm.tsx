@@ -8,12 +8,12 @@ interface GeAnalysisData {
   major: string;
   classes_taken: string[];
   categorization: {
-    GE_Classes: { name: string; area: string }[];
+    GE_Classes: { name: string; area: string; us1?: boolean; us2?: boolean; us3?: boolean; lab_credit?: boolean }[];
     "Everything Else": string[];
   };
   ap_credits?: {
     original: string[];
-    translated: { ap_exam: string; sjsu_code: string; sjsu_title: string; ge_areas: string[]; notes?: string }[];
+    translated: { ap_exam: string; sjsu_code: string; sjsu_title: string; ge_areas: string[]; us1?: boolean; us2?: boolean; us3?: boolean; lab_credit?: boolean; notes?: string }[];
     not_found: string[];
   };
   major_exceptions?: {
@@ -23,6 +23,11 @@ interface GeAnalysisData {
   };
   ge_progress?: Record<string, { earned: number; required: number; courses: string[]; waived?: boolean }>;
   ge_areas_needed: string[];
+  us_progress?: Record<string, { satisfied: boolean; courses: string[] }>;
+  us_areas_needed?: string[];
+  upper_division_progress?: Record<string, { satisfied: boolean; courses: string[] }>;
+  upper_division_needed?: string[];
+  pe_progress?: { earned: number; required: number; courses: string[] };
 }
 // function parseScheduleList(selectedTimes : Set<string>) : Map<String, String> {
 //   const timesArray = Array.from(selectedTimes);
@@ -111,6 +116,9 @@ const ScheduleForm: React.FC = () => {
                     neededGeAreas={geData.ge_areas_needed}
                     waivedGeAreas={geData.major_exceptions?.waived_areas || []}
                     geProgress={geData.ge_progress || {}}
+                    usProgress={geData.us_progress || {}}
+                    upperDivisionProgress={geData.upper_division_progress || {}}
+                    peProgress={geData.pe_progress || { earned: 0, required: 2, courses: [] }}
                   />
 
                   {/* Summary Section */}

@@ -29,31 +29,37 @@ GE_URL = "https://catalog.sjsu.edu/preview_program.php?catoid=10&poid=2524"
 
 
 def database_setup() -> None:
-    """Ensure the ge_courses table exists."""
+    """Drop and recreate the ge_courses table with updated schema."""
+    drop_table = "DROP TABLE IF EXISTS ge_courses"
     create_table = """
     CREATE TABLE IF NOT EXISTS ge_courses (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         area TEXT NOT NULL,
         code TEXT NOT NULL,
         title TEXT NOT NULL,
+        us1 INTEGER,
+        us2 INTEGER,
+        us3 INTEGER,
+        lab_credit INTEGER,
         UNIQUE(area, code, title)
     )
     """
     with sqlite3.connect(DATABASE) as conn:
+        conn.execute(drop_table)
         conn.execute(create_table)
         conn.commit()
         logger.info("ge_courses table ready")
 
 
-def extract_courses_from_ge_data(ge_data: dict) -> list[tuple[str, str, str]]:
+def extract_courses_from_ge_data(ge_data: dict) -> list[tuple]:
     """
-    Extract GE courses and return list of (area, code, title) tuples.
+    Extract GE courses and return list of (area, code, title, us1, us2, us3, lab_credit) tuples.
     
     Args:
-        ge_data: Dict with structure {Area: {Subarea: [{code, name}, ...]}}
+        ge_data: Dict with structure {Area: {Subarea: [{code, name, us1, us2, us3, lab_credit}, ...]}}
     
     Returns:
-        List of (area, code, title) tuples
+        List of (area, code, title, us1, us2, us3, lab_credit) tuples
     """
     courses = []
     for area, subareas in ge_data.items():
@@ -62,21 +68,33 @@ def extract_courses_from_ge_data(ge_data: dict) -> list[tuple[str, str, str]]:
                 code = course.get('code', '').strip()
                 title = course.get('name', '').strip()
                 if code and title:
-                    courses.append((subarea, code, title))
+                    courses.append((
+                        subarea,
+                        code,
+                        title,
+                        course.get('us1', False),
+                        course.get('us2', False),
+                        course.get('us3', False),
+                        course.get('lab_credit', False),
+                    ))
     return courses
 
 
-def upsert_ge_courses(courses: list[tuple[str, str, str]]) -> None:
+def upsert_ge_courses(courses: list[tuple]) -> None:
     """Insert or update courses into ge_courses table."""
     insert_sql = """
-    INSERT INTO ge_courses (area, code, title)
-    VALUES (?, ?, ?)
-    ON CONFLICT(area, code, title) DO UPDATE SET area = excluded.area
+    INSERT INTO ge_courses (area, code, title, us1, us2, us3, lab_credit)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(area, code, title) DO UPDATE SET
+        us1 = excluded.us1,
+        us2 = excluded.us2,
+        us3 = excluded.us3,
+        lab_credit = excluded.lab_credit
     """
     with sqlite3.connect(DATABASE) as conn:
         cursor = conn.cursor()
-        for area, code, title in courses:
-            cursor.execute(insert_sql, (area, code, title))
+        for row in courses:
+            cursor.execute(insert_sql, row)
         conn.commit()
         logger.info("upserted %d GE courses into ge_courses", len(courses))
 
