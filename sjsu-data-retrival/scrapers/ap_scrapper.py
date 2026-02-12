@@ -1,1 +1,0 @@
-#not implimented yet, articulation is hardcoded

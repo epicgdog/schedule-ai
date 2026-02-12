@@ -6,10 +6,11 @@ Source: SJSU Catalog — Exceptions for University Graduation Requirements (2021
 
 Usage:
     python major_exceptions_loader.py           # Load all data
-    python major_exceptions_loader.py --force    # Clear and reload
+    python -m sjsu-data-retrival.major_exceptions_loader --force    # Clear and reload
 """
 
 import argparse
+import json
 import logging
 import os
 import sqlite3
@@ -29,6 +30,18 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 DATABASE = str(PROJECT_ROOT / os.getenv("DATABASE", "db/sql.db"))
+
+
+GE_UNITS_REQUIRED = {   
+    "A":{"Areas":["A1", "A2", "A3"], "Units":9},
+    "B":{"Areas":["B1", "B2", "B3", "B4"], "Units":9},
+    "C":{"Areas":["C1", "C2"], "Units":9},
+    "D":{"Areas":["D"], "Units":6},
+    "F":{"Areas":["F"], "Units":3},
+    "US":{"Areas":["US1","US2","US3"], "Units":6},
+    "UPPER":{"Areas":["R", "S", "V"], "Units":9},
+    "PE":{"Areas":["PE"], "Units":2}
+}
 
 
 def database_setup() -> None:
@@ -203,8 +216,48 @@ EXCEPTIONS_DATA = [
 ]
 
 
+def build_waiver_json(waived_codes_str: str) -> str:
+    """
+    Convert a comma-separated list of waived codes (e.g. 'A3,B2,D1,PE')
+    into a JSON string adhering to the GE_UNITS_REQUIRED structure.
+    Only includes the areas that are waived.
+    """
+    if not waived_codes_str:
+        return "{}"
+
+    codes = [c.strip() for c in waived_codes_str.split(",")]
+    
+    waivers = {}
+
+    for code in codes:
+        if code == "PE":
+            waivers["PE"] = {"Areas": ["PE"], "Units": 2}
+        
+        elif code == "A3":
+            # Part of A
+            waivers["A"] = {"Areas": ["A3"], "Units": 3}
+            
+        elif code == "B2":
+            # Part of B
+            waivers["B"] = {"Areas": ["B2"], "Units": 3}
+            
+        elif code in ["D", "D1"]:
+            # D or D1 -> Area D.
+            waivers["D"] = {"Areas": ["D"], "Units": 6}
+            
+        elif code == "R":
+            # Part of UPPER
+            waivers["UPPER"] = {"Areas": ["R"], "Units": 3}
+        
+        else:
+            print(f"Warning: Unknown waiver code '{code}', skipping.")
+
+    return json.dumps(waivers)
+
+
 def upsert_exceptions(data: list[tuple]) -> None:
     """Insert or update major GE exceptions."""
+    # Note: validation of JSON is done via build_waiver_json helper
     insert_sql = """
     INSERT INTO major_ge_exceptions (major, degree, waived_ge_areas, notes, catalog_year)
     VALUES (?, ?, ?, ?, ?)
@@ -215,9 +268,15 @@ def upsert_exceptions(data: list[tuple]) -> None:
     with sqlite3.connect(DATABASE) as conn:
         cursor = conn.cursor()
         for row in data:
-            cursor.execute(insert_sql, row)
+            # row is (major, degree, waived_ge_areas_str, notes, catalog_year)
+            major, degree, raw_waivers, notes, year = row
+            
+            # Convert raw waivers to JSON
+            json_waivers = build_waiver_json(raw_waivers)
+            
+            cursor.execute(insert_sql, (major, degree, json_waivers, notes, year))
+            
         conn.commit()
-        logger.info("Upserted %d major GE exception records", len(data))
 
 
 def parse_args() -> argparse.Namespace:
