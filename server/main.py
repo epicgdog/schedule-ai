@@ -9,6 +9,8 @@ import json
 import agent
 from modules import get_instructor_rating, get_open_classes_for, get_ge_areas, get_courses_by_ge, get_open_ge_classes, get_major_ge_exceptions
 
+
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
@@ -63,26 +65,29 @@ def get_time_from_str(s: str):
         # pm time
 
 
+
+import pandas as pd
+import xlrd
+import io
+
 @app.post("/api/generate_classes")
 async def generate_possible_classes(file: UploadFile = File(...)):
-    # Validate PDF content type
-    if file.content_type != "application/pdf":
-        raise HTTPException(status_code=400, detail="File must be a PDF")
-
+    # Validate Excel content type
+    if file.content_type not in ["application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]:
+        return {"error": "Invalid file type. Please upload an Excel file (.xls or .xlsx)."}
+    logging.info(file.filename)
     # Read file bytes
     contents = await file.read()
-
-    # Open with fitz and extract text
-    doc = fitz.open(stream=contents, filetype="pdf")
-    text = ""
-    for page in doc:
-        text += page.get_text()
-    doc.close()
-    # with open("extracted_text.txt", "w") as f:
-    #     f.write(text)
-    msg = agent.invoke(text)
     
-    # Return to frontend
+
+    # Read Excel and extract text
+    try:
+        df = pd.read_excel(io.BytesIO(contents), engine='xlrd') # Specify engine for .xls files
+    except Exception as e:
+        return {"error": f"Error reading Excel file: {e}"}
+    
+    msg = agent.invoke(df)
+    
     return {"text": msg}
 
 
@@ -176,11 +181,11 @@ async def receive_schedule(request: ScheduleRequest):
     return {"status": "success", "data": "hi"}
 
 
-@app.get("/api/ge_areas")
-async def get_all_ge_areas():
-    """Get all available GE Areas."""
-    areas = await get_ge_areas()
-    return {"status": "success", "areas": areas}
+# @app.get("/api/ge_areas")
+# async def get_all_ge_areas():
+#     """Get all available GE Areas."""
+#     areas = await get_ge_areas()
+#     return {"status": "success", "areas": areas}
 
 
 @app.get("/api/ge_courses/{area}")
@@ -197,11 +202,11 @@ async def get_open_ge_classes_endpoint(area: str):
     return {"status": "success", "classes": classes}
 
 
-@app.get("/api/major_exceptions/{major}")
-async def get_major_exceptions_endpoint(major: str):
-    """Get GE area exceptions/waivers for a given major."""
-    exceptions = get_major_ge_exceptions(major)
-    return {"status": "success", "exceptions": exceptions}
+# @app.get("/api/major_exceptions/{major}")
+# async def get_major_exceptions_endpoint(major: str):
+#     """Get GE area exceptions/waivers for a given major."""
+#     exceptions = get_major_ge_exceptions(major)
+#     return {"status": "success", "exceptions": exceptions}
 
 
 if __name__ == "__main__":

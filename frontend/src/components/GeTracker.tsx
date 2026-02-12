@@ -1,58 +1,29 @@
 import React, { useState } from 'react';
 
-// Define the shape of our GE class data
-interface GeClass {
-    course_name: string;
-    name?: string;
-    code?: string;
-    area: string;
-    section_number?: number;
-    class_number?: number;
-    days?: string;
-    start_time?: string;
-    end_time?: string;
-    instructor?: string;
-    open_seats?: number;
-}
+// Configuration as per user request
+const GE_UNITS_REQUIRED: Record<string, { Areas: string[], Units: number, Label: string }> = {
+    "A": { "Areas": ["A1", "A2", "A3"], "Units": 9, "Label": "Basic Skills" },
+    "B": { "Areas": ["B1", "B2", "B3", "B4"], "Units": 9, "Label": "Science & Math" },
+    "C": { "Areas": ["C1", "C2"], "Units": 9, "Label": "Arts & Humanities" },
+    "D": { "Areas": ["D"], "Units": 6, "Label": "Social Sciences" },
+    "F": { "Areas": ["F"], "Units": 3, "Label": "Ethnic Studies" },
+    "US": { "Areas": ["US1", "US2", "US3"], "Units": 6, "Label": "US History, Constitution, & California Govt" },
+    "UPPER": { "Areas": ["R", "S", "V"], "Units": 9, "Label": "SJSU Studies (Upper Division)" },
+    "PE": { "Areas": ["PE"], "Units": 2, "Label": "Physical Education" }
+};
 
-interface GeProgressEntry {
-    earned: number;
-    required: number;
-    courses: string[];
-    waived?: boolean;
+interface GeCourseProgress {
+    Areas: string[];
+    Units: number;
+    Courses?: string[];
 }
 
 interface GeTrackerProps {
-    takenGeClasses: { name: string; area: string; us1?: boolean; us2?: boolean; us3?: boolean; lab_credit?: boolean }[];
-    neededGeAreas: string[];
-    waivedGeAreas?: string[];
-    geProgress?: Record<string, GeProgressEntry>;
-    usProgress?: Record<string, { satisfied: boolean; courses: string[] }>;
-    usAreasNeeded?: string[];
-    upperDivisionProgress?: Record<string, { satisfied: boolean; courses: string[] }>;
-    upperDivisionNeeded?: string[];
-    peProgress?: { earned: number; required: number; courses: string[] };
+    geCourses: Record<string, GeCourseProgress>;
 }
 
-const GE_AREAS = ["A1", "A2", "A3", "B1", "B2", "B3", "B4", "C1", "C2", "C1/C2", "D", "E", "F"];
-
-const US_AREAS: { key: string; label: string }[] = [
-    { key: "US1", label: "U.S. History" },
-    { key: "US2", label: "U.S. Constitution" },
-    { key: "US3", label: "California Government" },
-];
-
-const UPPER_DIVISION_AREAS: { key: string; label: string }[] = [
-    { key: "R", label: "Earth, Environment & Sustainability" },
-    { key: "S", label: "Self, Society & Equality in the U.S." },
-    { key: "V", label: "Cultures & Global Understanding" },
-];
-
-const GeTracker: React.FC<GeTrackerProps> = ({
-    takenGeClasses, neededGeAreas, waivedGeAreas = [], geProgress = {},
-    usProgress = {}, upperDivisionProgress = {}, peProgress = { earned: 0, required: 2, courses: [] },
-}) => {
-    const [openClasses, setOpenClasses] = useState<Record<string, GeClass[]>>({});
+const GeTracker: React.FC<GeTrackerProps> = ({ geCourses }) => {
+    const [openClasses, setOpenClasses] = useState<Record<string, any[]>>({}); // Just use any[] for now or define type
     const [loadingArea, setLoadingArea] = useState<string | null>(null);
     const [expandedArea, setExpandedArea] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -82,146 +53,145 @@ const GeTracker: React.FC<GeTrackerProps> = ({
         }
     };
 
-    const getStatus = (area: string): 'completed' | 'waived' | 'partial' | 'missing' => {
-        // Check if fully waived by major (D1 is NOT a full D waiver, it's partial)
-        const isWaived = waivedGeAreas.includes(area);
-
-        if (!neededGeAreas.includes(area) && isWaived) return 'waived';
-        if (!neededGeAreas.includes(area)) return 'completed';
-
-        // Check for partial completion (some units earned but not all)
-        const progress = geProgress[area];
-        if (progress && progress.earned > 0 && progress.earned < progress.required) return 'partial';
-
-        return 'missing';
-    };
-
-    const getTakenClass = (area: string) => {
-        return takenGeClasses.find(c => c.area === area);
-    };
+    const categories = Object.keys(GE_UNITS_REQUIRED);
 
     return (
         <div className="w-full mt-8 p-6 bg-gray-900 rounded-lg border border-gray-700">
-            <h2 className="text-2xl font-bold mb-6 text-white border-b border-gray-700 pb-2">Core GE Progress Tracker</h2>
+            <h2 className="text-2xl font-bold mb-6 text-white border-b border-gray-700 pb-2">GE Progress Tracker</h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {GE_AREAS.map((area) => {
-                    const status = getStatus(area);
-                    const takenClass = getTakenClass(area);
-                    const isOpen = expandedArea === area;
-                    const progress = geProgress[area];
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {categories.map((catKey) => {
+                    const requirements = GE_UNITS_REQUIRED[catKey];
+                    const progress = geCourses[catKey] || { Areas: [], Units: 0, Courses: [] };
+
+                    const neededAreas = requirements.Areas.filter(a => !progress.Areas.includes(a));
+                    const isCompleted = progress.Units >= requirements.Units && neededAreas.length === 0;
+                    const isPartial = progress.Units > 0 || progress.Areas.length > 0;
+
+                    // Determine Status
+                    let status: 'completed' | 'partial' | 'missing' = 'missing';
+                    if (isCompleted) status = 'completed';
+                    else if (isPartial) status = 'partial';
+
+                    const isOpen = expandedArea === catKey;
 
                     return (
                         <div
-                            key={area}
-                            className={`p-4 rounded-lg border transition-all ${status === 'completed'
+                            key={catKey}
+                            className={`p-5 rounded-lg border transition-all flex flex-col ${status === 'completed'
                                 ? 'bg-green-900/20 border-green-700/50'
-                                : status === 'waived'
-                                    ? 'bg-green-900/20 border-green-700/50'
-                                    : status === 'partial'
-                                        ? 'bg-yellow-900/20 border-yellow-700/50'
-                                        : 'bg-gray-800 border-gray-600 hover:border-blue-500'
+                                : status === 'partial'
+                                    ? 'bg-yellow-900/10 border-yellow-700/40'
+                                    : 'bg-gray-800 border-gray-700 hover:border-blue-500/50'
                                 }`}
                         >
-                            <div className="flex justify-between items-start mb-2">
-                                <span className="text-lg font-bold text-gray-200">Area {area}</span>
-                                {status === 'completed' ? (
-                                    <span className="px-2 py-1 text-xs font-semibold bg-green-500/20 text-green-400 rounded-full">
-                                        Completed
-                                    </span>
-                                ) : status === 'waived' ? (
-                                    <span className="px-2 py-1 text-xs font-semibold bg-purple-500/20 text-purple-400 rounded-full">
-                                        Waived by Major
-                                    </span>
-                                ) : status === 'partial' ? (
-                                    <span className="px-2 py-1 text-xs font-semibold bg-yellow-500/20 text-yellow-400 rounded-full">
-                                        In Progress
-                                    </span>
-                                ) : (
-                                    <span className="px-2 py-1 text-xs font-semibold bg-red-500/20 text-red-400 rounded-full">
-                                        Missing
-                                    </span>
+                            <div className="flex justify-between items-start mb-3">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-xl font-bold text-gray-100">Area {catKey}</h3>
+                                        {status === 'completed' && (
+                                            <span className="text-green-400 text-lg">✓</span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-gray-400 font-medium">{requirements.Label}</p>
+                                </div>
+                                <div className={`px-2 py-1 text-xs font-semibold rounded-full ${status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                                    status === 'partial' ? 'bg-yellow-500/20 text-yellow-400' :
+                                        'bg-red-500/20 text-red-400'
+                                    }`}>
+                                    {status === 'completed' ? 'Done' : status === 'partial' ? 'In Progress' : 'Missing'}
+                                </div>
+                            </div>
+
+                            {/* Units Progress Bar */}
+                            <div className="mb-4">
+                                <div className="flex justify-between text-xs text-gray-400 mb-1">
+                                    <span>{progress.Units} / {requirements.Units} Units</span>
+                                    <span>{Math.round((progress.Units / requirements.Units) * 100)}%</span>
+                                </div>
+                                <div className="w-full bg-gray-700 rounded-full h-1.5 overflow-hidden">
+                                    <div
+                                        className={`h-full rounded-full transition-all duration-500 ${status === 'completed' ? 'bg-green-500' :
+                                            status === 'partial' ? 'bg-yellow-500' : 'bg-gray-600'
+                                            }`}
+                                        style={{ width: `${Math.min(100, (progress.Units / requirements.Units) * 100)}%` }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Sub-Areas Status */}
+                            <div className="flex-1">
+                                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Requirements</h4>
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    {requirements.Areas.map(area => {
+                                        const isDone = progress.Areas.includes(area);
+                                        return (
+                                            <span
+                                                key={area}
+                                                className={`px-2 py-1 text-xs rounded border ${isDone
+                                                    ? 'bg-green-900/30 border-green-600/50 text-green-300'
+                                                    : 'bg-gray-700 border-gray-600 text-gray-400'
+                                                    }`}
+                                            >
+                                                {area} {isDone && '✓'}
+                                            </span>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Courses Taken */}
+                                {progress.Courses && progress.Courses.length > 0 && (
+                                    <div className="mb-3">
+                                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Courses Applied</h4>
+                                        <ul className="text-sm text-gray-300 space-y-1">
+                                            {progress.Courses.map((c, i) => (
+                                                <li key={i} className="truncate">• {c}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
                                 )}
                             </div>
 
-                            {/* Unit progress bar for areas with multi-unit requirements */}
-                            {progress && progress.required > 3 && status !== 'waived' && (
-                                <div className="mb-2">
-                                    <div className="flex justify-between text-xs text-gray-400 mb-1">
-                                        <span>{progress.earned}/{progress.required} units</span>
-                                        <span>{progress.courses.length} course{progress.courses.length !== 1 ? 's' : ''}</span>
+                            {/* Action Button: Find Classes for Missing Areas */}
+                            {neededAreas.length > 0 && (
+                                <div className="mt-4 pt-3 border-t border-gray-700/50">
+                                    <div className="mb-2 text-xs text-gray-400">
+                                        Missing: <span className="text-red-300">{neededAreas.join(', ')}</span>
                                     </div>
-                                    <div className="w-full bg-gray-700 rounded-full h-1.5">
-                                        <div
-                                            className={`h-1.5 rounded-full transition-all ${progress.earned >= progress.required ? 'bg-green-500' : progress.earned > 0 ? 'bg-yellow-500' : 'bg-gray-600'
-                                                }`}
-                                            style={{ width: `${Math.min(100, (progress.earned / progress.required) * 100)}%` }}
-                                        />
-                                    </div>
+                                    <button
+                                        onClick={() => fetchOpenClasses(neededAreas[0])} // Just pick the first missing area for now
+                                        disabled={loadingArea === neededAreas[0]}
+                                        className="w-full py-2 px-3 text-sm bg-blue-600 hover:bg-blue-500 text-white rounded transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        {loadingArea === neededAreas[0] ? (
+                                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        ) : isOpen ? 'Hide Classes' : `Find ${neededAreas[0]} Classes`}
+                                    </button>
                                 </div>
                             )}
 
-                            {status === 'completed' && takenClass ? (
-                                <div className="text-sm text-gray-400">
-                                    {progress && progress.courses.length > 0 ? (
-                                        progress.courses.map((course: string, i: number) => (
-                                            <p key={i} className="font-medium text-gray-300">{course}</p>
-                                        ))
-                                    ) : (
-                                        <p className="font-medium text-gray-300">{takenClass.name}</p>
-                                    )}
-                                </div>
-                            ) : status === 'waived' ? (
-                                <div className="text-sm text-white mt-1">
-                                    <p>Satisfied by major requirements</p>
-                                </div>
-                            ) : (status === 'missing' || status === 'partial') ? (
-                                <div className="mt-2">
-                                    {status === 'partial' && progress && (
-                                        <div className="text-sm text-gray-400 mb-2">
-                                            {progress.courses.map((course: string, i: number) => (
-                                                <p key={i} className="font-medium text-yellow-300/80">✓ {course}</p>
-                                            ))}
-                                            <p className="text-yellow-400/60 text-xs mt-1">
-                                                Need {progress.required - progress.earned} more unit{progress.required - progress.earned !== 1 ? 's' : ''}
-                                            </p>
-                                        </div>
-                                    )}
-                                    <button
-                                        onClick={() => fetchOpenClasses(area)}
-                                        disabled={loadingArea === area}
-                                        className="w-full py-2 px-3 text-sm bg-blue-600 hover:bg-blue-500 text-white rounded transition-colors flex items-center justify-center gap-2"
-                                    >
-                                        {loadingArea === area ? (
-                                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        ) : isOpen ? 'Hide Classes' : 'Find Classes'}
-                                    </button>
-                                </div>
-                            ) : null}
-
                             {/* Expandable Open Classes List */}
-                            {isOpen && (status === 'missing' || status === 'partial') && (
-                                <div className="mt-4 space-y-2 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
-                                    {openClasses[area]?.length === 0 ? (
+                            {isOpen && (
+                                <div className="mt-3 space-y-2 max-h-60 overflow-y-auto pr-1 custom-scrollbar animate-fade-in text-left">
+                                    {openClasses[neededAreas[0]]?.length === 0 ? (
                                         <p className="text-sm text-gray-500 italic">No open classes found.</p>
                                     ) : (
-                                        openClasses[area]?.map((cls, idx) => (
-                                            <div key={idx} className="p-2 bg-gray-700/50 rounded text-sm hover:bg-gray-700 transition-colors">
+                                        openClasses[neededAreas[0]]?.map((cls: any, idx: number) => (
+                                            <div key={idx} className="p-2 bg-gray-700/50 rounded text-sm hover:bg-gray-700 transition-colors border border-gray-600/30">
                                                 <div className="flex justify-between font-medium text-blue-300">
                                                     <span>{cls.course_name}</span>
                                                     <span>{cls.open_seats} seats</span>
                                                 </div>
-                                                <div className="text-gray-400 text-xs mt-1">
-                                                    {cls.days} {cls.start_time}-{cls.end_time}
-                                                </div>
-                                                <div className="text-gray-500 text-xs truncate">
-                                                    {cls.instructor}
+                                                <div className="text-gray-400 text-xs mt-1 flex justify-between">
+                                                    <span>{cls.days} {cls.start_time}-{cls.end_time}</span>
+                                                    <span className="truncate max-w-[100px] text-right">{cls.instructor}</span>
                                                 </div>
                                             </div>
                                         ))
                                     )}
                                 </div>
                             )}
+
                         </div>
                     );
                 })}
@@ -232,160 +202,6 @@ const GeTracker: React.FC<GeTrackerProps> = ({
                     {error}
                 </div>
             )}
-
-            {/* American Institutions (US) Requirements */}
-            <div className="mt-8">
-                <h2 className="text-2xl font-bold mb-6 text-white border-b border-gray-700 pb-2">American Institutions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {US_AREAS.map(({ key, label }) => {
-                        const progress = usProgress[key];
-                        const isSatisfied = progress?.satisfied ?? false;
-                        const courses = progress?.courses ?? [];
-
-                        return (
-                            <div
-                                key={key}
-                                className={`p-4 rounded-lg border transition-all ${isSatisfied
-                                    ? 'bg-green-900/20 border-green-700/50'
-                                    : 'bg-gray-800 border-gray-600'
-                                    }`}
-                            >
-                                <div className="flex justify-between items-start mb-2">
-                                    <div>
-                                        <span className="text-lg font-bold text-gray-200">{key}</span>
-                                        <p className="text-xs text-gray-400 mt-0.5">{label}</p>
-                                    </div>
-                                    {isSatisfied ? (
-                                        <span className="px-2 py-1 text-xs font-semibold bg-green-500/20 text-green-400 rounded-full">
-                                            Completed
-                                        </span>
-                                    ) : (
-                                        <span className="px-2 py-1 text-xs font-semibold bg-red-500/20 text-red-400 rounded-full">
-                                            Missing
-                                        </span>
-                                    )}
-                                </div>
-
-                                {isSatisfied && courses.length > 0 ? (
-                                    <div className="text-sm text-gray-400">
-                                        {courses.map((course, i) => (
-                                            <p key={i} className="font-medium text-gray-300">{course}</p>
-                                        ))}
-                                    </div>
-                                ) : !isSatisfied ? (
-                                    <p className="text-sm text-gray-500 italic">Not yet satisfied</p>
-                                ) : null}
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* Upper Division GE (SJSU Studies) */}
-            <div className="mt-8">
-                <h2 className="text-2xl font-bold mb-6 text-white border-b border-gray-700 pb-2">SJSU Studies — Upper Division</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {UPPER_DIVISION_AREAS.map(({ key, label }) => {
-                        const progress = upperDivisionProgress[key];
-                        const isSatisfied = progress?.satisfied ?? false;
-                        const courses = progress?.courses ?? [];
-
-                        return (
-                            <div
-                                key={key}
-                                className={`p-4 rounded-lg border transition-all ${isSatisfied
-                                        ? 'bg-green-900/20 border-green-700/50'
-                                        : 'bg-gray-800 border-gray-600'
-                                    }`}
-                            >
-                                <div className="flex justify-between items-start mb-2">
-                                    <div>
-                                        <span className="text-lg font-bold text-gray-200">Area {key}</span>
-                                        <p className="text-xs text-gray-400 mt-0.5">{label}</p>
-                                    </div>
-                                    {isSatisfied ? (
-                                        <span className="px-2 py-1 text-xs font-semibold bg-green-500/20 text-green-400 rounded-full">
-                                            Completed
-                                        </span>
-                                    ) : (
-                                        <span className="px-2 py-1 text-xs font-semibold bg-red-500/20 text-red-400 rounded-full">
-                                            Missing
-                                        </span>
-                                    )}
-                                </div>
-
-                                {isSatisfied && courses.length > 0 ? (
-                                    <div className="text-sm text-gray-400">
-                                        {courses.map((course, i) => (
-                                            <p key={i} className="font-medium text-gray-300">{course}</p>
-                                        ))}
-                                    </div>
-                                ) : !isSatisfied ? (
-                                    <p className="text-sm text-gray-500 italic">Not yet tracked</p>
-                                ) : null}
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* Physical Education (PE / Kinesiology) */}
-            <div className="mt-8">
-                <h2 className="text-2xl font-bold mb-6 text-white border-b border-gray-700 pb-2">Physical Education</h2>
-                <div className={`p-4 rounded-lg border transition-all ${peProgress.earned >= peProgress.required
-                        ? 'bg-green-900/20 border-green-700/50'
-                        : peProgress.earned > 0
-                            ? 'bg-yellow-900/20 border-yellow-700/50'
-                            : 'bg-gray-800 border-gray-600'
-                    }`}>
-                    <div className="flex justify-between items-start mb-2">
-                        <div>
-                            <span className="text-lg font-bold text-gray-200">Kinesiology Activity</span>
-                            <p className="text-xs text-gray-400 mt-0.5">2 units of KIN activity courses required</p>
-                        </div>
-                        {peProgress.earned >= peProgress.required ? (
-                            <span className="px-2 py-1 text-xs font-semibold bg-green-500/20 text-green-400 rounded-full">
-                                Completed
-                            </span>
-                        ) : peProgress.earned > 0 ? (
-                            <span className="px-2 py-1 text-xs font-semibold bg-yellow-500/20 text-yellow-400 rounded-full">
-                                In Progress
-                            </span>
-                        ) : (
-                            <span className="px-2 py-1 text-xs font-semibold bg-red-500/20 text-red-400 rounded-full">
-                                Missing
-                            </span>
-                        )}
-                    </div>
-
-                    {/* Progress bar */}
-                    <div className="mb-2">
-                        <div className="flex justify-between text-xs text-gray-400 mb-1">
-                            <span>{peProgress.earned}/{peProgress.required} units</span>
-                            <span>{peProgress.courses.length} course{peProgress.courses.length !== 1 ? 's' : ''}</span>
-                        </div>
-                        <div className="w-full bg-gray-700 rounded-full h-1.5">
-                            <div
-                                className={`h-1.5 rounded-full transition-all ${peProgress.earned >= peProgress.required ? 'bg-green-500'
-                                        : peProgress.earned > 0 ? 'bg-yellow-500'
-                                            : 'bg-gray-600'
-                                    }`}
-                                style={{ width: `${Math.min(100, (peProgress.earned / peProgress.required) * 100)}%` }}
-                            />
-                        </div>
-                    </div>
-
-                    {peProgress.courses.length > 0 ? (
-                        <div className="text-sm text-gray-400">
-                            {peProgress.courses.map((course, i) => (
-                                <p key={i} className="font-medium text-gray-300">✓ {course}</p>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-sm text-gray-500 italic">Not yet tracked</p>
-                    )}
-                </div>
-            </div>
         </div>
     );
 };

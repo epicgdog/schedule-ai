@@ -2,6 +2,7 @@
 
 import sqlite3
 import logging
+import json
 from dotenv import load_dotenv
 import os
 import httpx
@@ -65,7 +66,7 @@ async def get_open_classes_for(course_name: str) -> list[dict]:
         return []
 
 
-def get_major_ge_exceptions(major: str) -> dict:
+def get_major_ge_exceptions(major: str, conn: sqlite3.Connection) -> dict:
     """
     Get GE area exceptions/waivers for a given major.
     
@@ -74,43 +75,61 @@ def get_major_ge_exceptions(major: str) -> dict:
     
     Returns:
         Dict with:
-        - "waived_areas": list of GE area codes that are auto-satisfied
+        - "waived_areas": list of GE area codes that are auto-satisfied (extracted from JSON)
         - "notes": explanation text
         - "major_matched": the exact major name matched in the DB (or None)
+        - "waived_data": The full structured waiver data from DB
     """
     try:
-        database = os.getenv("DATABASE")
-        with sqlite3.connect(database) as conn:
-            cursor = conn.cursor()
+        cursor = conn.cursor()
             
-            # Try exact match first
+        # Try exact match first
+        cursor.execute(
+            "SELECT major, degree, waived_ge_areas, notes FROM major_ge_exceptions WHERE major = ? LIMIT 1",
+            (major,)
+        )
+        row = cursor.fetchone()
+            
+        if not row:
+            # Fuzzy match — the LLM might say "Computer Science" but the table has "Computer Science"
+            # or the table might have "Software Engineering" and the LLM says "Software Engineering, BS"
             cursor.execute(
-                "SELECT major, degree, waived_ge_areas, notes FROM major_ge_exceptions WHERE major = ? LIMIT 1",
-                (major,)
+                "SELECT major, degree, waived_ge_areas, notes FROM major_ge_exceptions WHERE ? LIKE '%' || major || '%' OR major LIKE '%' || ? || '%' LIMIT 1",
+                (major, major)
             )
             row = cursor.fetchone()
             
-            if not row:
-                # Fuzzy match — the LLM might say "Computer Science" but the table has "Computer Science"
-                # or the table might have "Software Engineering" and the LLM says "Software Engineering, BS"
-                cursor.execute(
-                    "SELECT major, degree, waived_ge_areas, notes FROM major_ge_exceptions WHERE ? LIKE '%' || major || '%' OR major LIKE '%' || ? || '%' LIMIT 1",
-                    (major, major)
-                )
-                row = cursor.fetchone()
-            
-            if row:
-                waived_areas = [a.strip() for a in row[2].split(",")]
-                return {
-                    "waived_areas": waived_areas,
+        if row:
+            # row[2] can be JSON or legacy comma-separated string
+            raw_data = row[2]
+            waived_areas = []
+            waived_data = {}
+                
+            try:
+                # Attempt to parse as JSON
+                waived_data = json.loads(raw_data)
+                # Extract areas from the JSON structure: {"PE": {"Areas": ["PE"], ...}}
+                for val in waived_data.values():
+                    if isinstance(val, dict) and "Areas" in val:
+                        waived_areas.extend(val["Areas"])
+                    else:
+                        # Fallback if structure is unexpected
+                        pass
+            except json.JSONDecodeError:
+                # Legacy comma-separated string
+                waived_areas = [a.strip() for a in raw_data.split(",")]
+                
+            return {
+                "waived_areas": waived_areas,
                     "notes": row[3],
-                    "major_matched": f"{row[0]}, {row[1]}"
+                    "major_matched": f"{row[0]}, {row[1]}",
+                    "waived_data": waived_data
                 }
             
-            return {"waived_areas": [], "notes": None, "major_matched": None}
+            return {"waived_areas": [], "notes": None, "major_matched": None, "waived_data": {}}
     except Exception as e:
         logging.error(f"Error retrieving major GE exceptions: {e}")
-        return {"waived_areas": [], "notes": None, "major_matched": None}
+        return {"waived_areas": [], "notes": None, "major_matched": None, "waived_data": {}}
 
 
 async def get_ge_areas() -> list[str]:

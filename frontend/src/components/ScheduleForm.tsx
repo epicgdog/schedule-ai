@@ -1,37 +1,16 @@
 import React, { useState } from 'react';
-import MajorDropdown from './MajorDropdown';
+
 import CourseInput from './CourseInput';
 import TimeSelector from './TimeSelector';
 import GeTracker from './GeTracker';
 
 interface GeAnalysisData {
-  major: string;
-  classes_taken: string[];
-  categorization: {
-    GE_Classes: { name: string; area: string; us1?: boolean; us2?: boolean; us3?: boolean; lab_credit?: boolean }[];
-    "Everything Else": string[];
-  };
-  ap_credits?: {
-    original: string[];
-    translated: { ap_exam: string; sjsu_code: string; sjsu_title: string; ge_areas: string[]; us1?: boolean; us2?: boolean; us3?: boolean; lab_credit?: boolean; notes?: string }[];
-    not_found: string[];
-  };
-  major_exceptions?: {
-    waived_areas: string[];
-    notes: string | null;
-    major_matched: string | null;
-  };
-  ge_progress?: Record<string, { earned: number; required: number; courses: string[]; waived?: boolean }>;
-  ge_areas_needed: string[];
-  us_progress?: Record<string, { satisfied: boolean; courses: string[] }>;
-  us_areas_needed?: string[];
-  upper_division_progress?: Record<string, { satisfied: boolean; courses: string[] }>;
-  upper_division_needed?: string[];
-  pe_progress?: { earned: number; required: number; courses: string[] };
+  Name: string;
+  Major: string;
+  GE_Courses: Record<string, { Areas: string[]; Units: number; Courses: string[] }>;
+  Major_Courses: Record<string, any>;
 }
-// function parseScheduleList(selectedTimes : Set<string>) : Map<String, String> {
-//   const timesArray = Array.from(selectedTimes);
-// ... existing helper code ...
+
 export type Day = "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
 const DAYS: Day[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -53,7 +32,7 @@ const ScheduleForm: React.FC = () => {
   const handleAnalysisComplete = (data: GeAnalysisData) => {
     console.log("Analysis complete:", data);
     setGeData(data);
-    if (data.major) setMajor(data.major);
+    if (data.Major) setMajor(data.Major);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -111,22 +90,13 @@ const ScheduleForm: React.FC = () => {
               <CourseInput onAnalysisComplete={handleAnalysisComplete} />
               {geData && (
                 <div className="mt-8 animate-fade-in">
-                  <GeTracker
-                    takenGeClasses={geData.categorization.GE_Classes}
-                    neededGeAreas={geData.ge_areas_needed}
-                    waivedGeAreas={geData.major_exceptions?.waived_areas || []}
-                    geProgress={geData.ge_progress || {}}
-                    usProgress={geData.us_progress || {}}
-                    upperDivisionProgress={geData.upper_division_progress || {}}
-                    peProgress={geData.pe_progress || { earned: 0, required: 2, courses: [] }}
-                  />
+                  <GeTracker geCourses={geData.GE_Courses || {}} />
 
                   {/* Summary Section */}
                   <div className="mt-6 p-4 rounded bg-gray-800 border border-gray-700">
                     <h3 className="text-xl font-semibold mb-2 text-blue-400">Analysis Summary</h3>
-                    <p>Major Detected: <span className="font-bold text-white">{geData.major}</span></p>
-                    <p>Total Classes Processed: <span className="font-bold text-white">{geData.classes_taken.length}</span></p>
-                    <p>GE Requirements Remaining: <span className="font-bold text-white">{geData.ge_areas_needed.length}</span></p>
+                    <p>Major Detected: <span className="font-bold text-white">{geData.Major}</span></p>
+                    <p>Name: <span className="font-bold text-white">{geData.Name}</span></p>
                   </div>
                 </div>
               )}
