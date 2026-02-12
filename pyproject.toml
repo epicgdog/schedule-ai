@@ -3,7 +3,7 @@ name = "schedule-ai"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12, <3.13"
 dependencies = [
     "annotated-doc==0.0.4",
     "annotated-types==0.7.0",
@@ -43,10 +43,13 @@ dependencies = [
     "langchain-ollama>=1.0.1",
     "langchain-openai>=1.1.7",
     "langgraph>=1.0.8",
+    "libsql>=0.1.11",
     "markdown-it-py==4.0.0",
     "markupsafe==3.0.3",
     "mcp==1.25.0",
+    "mcp-playwright-scraper>=0.1.0",
     "mdurl==0.1.2",
+    "playwright>=1.58.0",
     "pyasn1==0.6.1",
     "pyasn1-modules==0.4.2",
     "pycparser==2.23",
