@@ -15,7 +15,7 @@ import logging
 import os
 import sqlite3
 from pathlib import Path
-
+import re
 from dotenv import load_dotenv
 
 # Resolve paths relative to project root (parent of sjsu-data-retrival/)
@@ -139,41 +139,41 @@ EXCEPTIONS_DATA = [
      "B2 (Intensive Science with completion of the major); D1 (with completion of AMS Sequence)", "2021-2022"),
 
     # ── Engineering ──
-    ("Aerospace Engineering", "BS", "A3,B2,D1,PE",
+    ("Aerospace Engineering", "BS", "A3,B2,D1,PE, S, V",
      "A3 met; B2 (Intensive Science); D1 (AMS Sequence); PE Waived; S&V met in major (AE 171A/AE 171B or AE 172A/AE 172B plus ENGR 195A/ENGR 195B)", "2021-2022"),
 
-    ("Biomedical Engineering", "BS", "A3,B2,D1,PE",
+    ("Biomedical Engineering", "BS", "A3,B2,D1,PE, S, V",
      "A3 met; B2 (Intensive Science); D1 (AMS Sequence); PE Waived; S&V met in major (ENGR 199A/ENGR 199B plus ENGR 195A/ENGR 195B)", "2021-2022"),
 
-    ("Chemical Engineering", "BS", "A3,B2,D,PE",
-     "A3 met; B2 (Intensive Science); D (AMS Sequence); PE Waived", "2021-2022"),
+    ("Chemical Engineering", "BS", "A3,B2,D,PE, S, V",
+     "A3 met; B2 (Intensive Science); D (AMS Sequence); PE Waived; S&V met in major (CMPE 195A/CMPE 195B plus ENGR 195A/ENGR 195B)", "2021-2022"),
 
-    ("Civil Engineering", "BS", "A3,B2,D,PE",
-     "A3 met; B2 (Intensive Science); D (AMS Sequence); PE Waived", "2021-2022"),
+    ("Civil Engineering", "BS", "A3,B2,D,PE, S, V",
+     "A3 met; B2 (Intensive Science); D (AMS Sequence); PE Waived; S&V met in major (ENGR 195A/ENGR 195B)", "2021-2022"),
 
-    ("Computer Engineering", "BS", "A3,D,PE",
+    ("Computer Engineering", "BS", "A3,D,PE, S, V",
      "A3 met; D (AMS Sequence); PE Waived; S&V met in major (CMPE 195A/CMPE 195B plus ENGR 195A/ENGR 195B)", "2021-2022"),
 
-    ("Electrical Engineering", "BS", "A3,B2,D,PE",
+    ("Electrical Engineering", "BS", "A3,B2,D,PE, S, V",
      "A3 met; B2 (Intensive Science); D (AMS Sequence); PE Waived; S&V met in major (EE 198A/EE 198B plus ENGR 195A/ENGR 195B)", "2021-2022"),
 
-    ("Industrial and Systems Engineering", "BS", "A3,B2,D,PE",
-     "A3 met; B2 (Intensive Science); D (AMS Sequence); PE Waived", "2021-2022"),
-
-    ("Interdisciplinary Engineering", "BS", "A3,B2,D,PE",
+    ("Industrial and Systems Engineering", "BS", "A3,B2,D,PE, S, V",
      "A3 met; B2 (Intensive Science); D (AMS Sequence); PE Waived; S&V met in major (ENGR 195A/ENGR 195B)", "2021-2022"),
 
-    ("Materials Engineering", "BS", "A3,B2,D,PE",
+    ("Interdisciplinary Engineering", "BS", "A3,B2,D,PE, S, V",
      "A3 met; B2 (Intensive Science); D (AMS Sequence); PE Waived; S&V met in major (ENGR 195A/ENGR 195B)", "2021-2022"),
 
-    ("Mechanical Engineering", "BS", "A3,B2,D1,PE",
+    ("Materials Engineering", "BS", "A3,B2,D,PE, S, V",
+     "A3 met; B2 (Intensive Science); D (AMS Sequence); PE Waived; S&V met in major (ENGR 195A/ENGR 195B)", "2021-2022"),
+
+    ("Mechanical Engineering", "BS", "A3, B2, D1, PE, S, V",
      "A3 met; B2 (Intensive Science); D1 (AMS Sequence); PE Waived; S&V met in major (ME 195A/ME 195B or ENGR 195C/ENGR 195D plus ENGR 195A/ENGR 195B)", "2021-2022"),
 
-    ("Software Engineering", "BS", "A3,D1,PE",
+    ("Software Engineering", "BS", "A3, D1, PE, S, V",
      "A3 met; D1 (AMS Sequence); PE Waived; S&V met in major (CMPE 195A/CMPE 195B plus ENGR 195A/ENGR 195B)", "2021-2022"),
 
     # ── Engineering Technology ──
-    ("Engineering Technology, Computer Network System Management Concentration", "BS", "B2,D1,PE",
+    ("Engineering Technology, Computer Network System Management Concentration", "BS", "B2, D1, PE",
      "B2 (Intensive Science with completion of the major); D1 (AMS Sequence); PE Waived", "2021-2022"),
 
     ("Engineering Technology, Manufacturing Systems Concentration", "BS", "B2,D1,PE",
@@ -227,7 +227,13 @@ def build_waiver_json(waived_codes_str: str) -> str:
 
     codes = [c.strip() for c in waived_codes_str.split(",")]
     
-    waivers = {}
+    waivers = {
+        "UPPER": {"Areas": [], "Units": 0},
+        "PE": {"Areas": [], "Units": 0},
+        "A": {"Areas": [], "Units": 0},
+        "B": {"Areas": [], "Units": 0},
+        "D": {"Areas": [], "Units": 0},
+    }
 
     for code in codes:
         if code == "PE":
@@ -244,10 +250,20 @@ def build_waiver_json(waived_codes_str: str) -> str:
         elif code in ["D", "D1"]:
             # D or D1 -> Area D.
             waivers["D"] = {"Areas": ["D"], "Units": 6}
-            
+
         elif code == "R":
             # Part of UPPER
-            waivers["UPPER"] = {"Areas": ["R"], "Units": 3}
+            waivers["UPPER"]["Areas"].append("R")
+            waivers["UPPER"]["Units"] += 3
+            
+        elif code == "S":
+            # Part of UPPER
+            waivers["UPPER"]["Areas"].append("S")
+            waivers["UPPER"]["Units"] += 3
+        elif code == "V":
+            # Part of UPPER
+            waivers["UPPER"]["Areas"].append("V")
+            waivers["UPPER"]["Units"] += 3
         
         else:
             print(f"Warning: Unknown waiver code '{code}', skipping.")
@@ -268,12 +284,14 @@ def upsert_exceptions(data: list[tuple]) -> None:
     with sqlite3.connect(DATABASE) as conn:
         cursor = conn.cursor()
         for row in data:
+
             # row is (major, degree, waived_ge_areas_str, notes, catalog_year)
             major, degree, raw_waivers, notes, year = row
             
             # Convert raw waivers to JSON
             json_waivers = build_waiver_json(raw_waivers)
-            
+            if major == "Software Engineering":
+                print(json_waivers)
             cursor.execute(insert_sql, (major, degree, json_waivers, notes, year))
             
         conn.commit()
