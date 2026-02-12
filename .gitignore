@@ -16,3 +16,4 @@ requirements-mac.txt
 requirements-linux.txt
 output.md
 debug_outputs/
+.agent/
