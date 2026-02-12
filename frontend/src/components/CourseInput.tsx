@@ -52,6 +52,10 @@ const CourseInput: React.FC<CourseInputProps> = ({ onAnalysisComplete }) => {
 
       const data = await response.json();
 
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
       // Parse the nested JSON string from the "text" field
       let parsedData;
       try {
@@ -63,6 +67,10 @@ const CourseInput: React.FC<CourseInputProps> = ({ onAnalysisComplete }) => {
       } catch (e) {
         console.error("Failed to parse inner JSON", data.text);
         throw new Error("Failed to parse transcript analysis results.");
+      }
+
+      if (!parsedData) {
+        throw new Error("No analysis data received from server.");
       }
 
       onAnalysisComplete(parsedData);

@@ -106,8 +106,17 @@ const GeTracker: React.FC<GeTrackerProps> = ({ geCourses }) => {
                             {/* Units Progress Bar */}
                             <div className="mb-4">
                                 <div className="flex justify-between text-xs text-gray-400 mb-1">
-                                    <span>{progress.Units} / {requirements.Units} Units</span>
-                                    <span>{Math.round((progress.Units / requirements.Units) * 100)}%</span>
+                                    <span>{
+                                        progress.Units > requirements.Units ?
+                                            requirements.Units
+                                            : progress.Units
+                                        } / {requirements.Units} Units</span>
+                                    <span>{
+                                        ((progress.Units / requirements.Units) * 100 > 100) ?
+                                            100
+                                             : Math.round((progress.Units / requirements.Units) * 100)
+
+                                    }%</span>
                                 </div>
                                 <div className="w-full bg-gray-700 rounded-full h-1.5 overflow-hidden">
                                     <div

@@ -131,8 +131,8 @@ def ge_processor_pipeline(ge_courses: list[course], major: str, conn: sqlite3.Co
             # Add course info if not already present (avoid duplicates)
             # Use a formatted string or dict? Just string for now as per previous simple implementation
             course_str = f"{course_obj.code} - {course_obj.title}"
-            if course_str not in ge_earned[category]["Courses"]:
-                 ge_earned[category]["Courses"].append(course_str)
+            # if course_str not in ge_earned[category]["Courses"]:
+            #      ge_earned[category]["Courses"].append(course_str)
 
     return ge_earned
 
@@ -190,34 +190,74 @@ def invoke(transcript_str: DataFrame) -> Dict:
     
     #cut off the first row of titles if necessary, assuming df doesn't have headers logic applied correctly
     # Or just skip first row as originally intended?
-    if len(df1) > 1:
-        df1 = df1.iloc[1:]
+    # Step 1.5: Dynamic Column Mapping
+    # The transcript might be an HTML table where headers are in the first row.
+    # We scan for a header row to determine column indices dynamically.
+    
+    header_map = {}
+    start_row_index = 0
+    found_header = False
+
+    # Possible column names to look for (normalized to lowercase)
+    target_headers = {
+        "code": ["course", "class", "course no"],
+        "title": ["description", "title", "course title"],
+        "units": ["units", "credits", "unit"],
+        "ge": ["reqmnt desig", "requirement designation", "designation", "ge", "notes", "transcript note"]
+    }
+
+    # Scan first 5 rows to find a header
+    for i in range(min(5, len(df1))):
+        row_values = [str(x).lower().strip() for x in df1.iloc[i].tolist()]
+        
+        # Check if this row looks like a header (contains "course" and "units")
+        if any(h in row_values for h in target_headers["code"]) and any(h in row_values for h in target_headers["units"]):
+            found_header = True
+            start_row_index = i + 1 # Data starts after header
+            
+            # Map columns
+            for col_idx, val in enumerate(row_values):
+                for key, possible_names in target_headers.items():
+                    if val in possible_names:
+                        header_map[key] = col_idx
+            
+            logging.info(f"Found header at row {i}: {header_map}")
+            break
+    
+    # Defaults if header search fails (legacy behavior fallback)
+    # Based on user screenshot: 0=Course, 1=Desc, 4=Units, 7=Reqmnt Desig, 8=Status
+    if "code" not in header_map: header_map["code"] = 0
+    if "title" not in header_map: header_map["title"] = 1
+    if "units" not in header_map: header_map["units"] = 4
+    if "ge" not in header_map: header_map["ge"] = 7 # changed from 8 to 7 based on screenshot
 
     CourseArray = []
 
-    # Use len() for loop limit
-    for row in range(len(df1)):
-        # iloc uses 0-based integer position
+    # Iterate through data rows
+    for row in range(start_row_index, len(df1)):
         try:
+            # Skip empty rows or repeated headers
+            val_code = str(df1.iloc[row, header_map["code"]])
+            if "course" in val_code.lower() or val_code == "nan":
+                continue
+
+            # Extract GE text. Try specific GE column first
+            ge_text = ""
+            if "ge" in header_map:
+                ge_text = str(df1.iloc[row, header_map["ge"]])
+            
+            # If that's empty/useless, maybe check "transcript note" (column 9 in screenshot) if we mapped it?
+            # For now relying on the mapped GE column (Reqmnt Desig) which is standard.
+
             course_obj = course(
-                code=str(df1.iloc[row, 0]),
-                title=str(df1.iloc[row, 1]),
-            # grade is at index 3? based on original code
-            # units at index 4?
-            # ge_area at index 8?
-            # We must be careful about bounds
-                units=float(df1.iloc[row, 4]) if pd.notna(df1.iloc[row, 4]) else 0,
-                ge_area=area_regex(df1.iloc[row, 8]),
+                code=val_code,
+                title=str(df1.iloc[row, header_map["title"]]),
+                units=float(df1.iloc[row, header_map["units"]]) if pd.notna(df1.iloc[row, header_map["units"]]) else 0,
+                ge_area=area_regex(ge_text),
             )
-             # Note: grade was used in original code line 122 but not in __init__?
-             # class course: def __init__(self, code: str, title: str, units: int, ge_area: list[str]):
-             # Original code line 122 passed `grade=...`.
-             # BUT __init__ DOES NOT HAVE `grade`.
-             # I need to remove `grade` from the call or add it to class.
-             # I'll remove it since User defined class above and it doesn't have it.
             CourseArray.append(course_obj)
         except Exception as e:
-            logging.error(f"Error parsing row {row}: {e}")
+            # logging.error(f"Error parsing row {row}: {e}")
             continue
 
     logging.info(f"Found {len(CourseArray)} college courses")

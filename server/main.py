@@ -80,11 +80,24 @@ async def generate_possible_classes(file: UploadFile = File(...)):
     contents = await file.read()
     
 
-    # Read Excel and extract text
+    # Read file content
+    # User confirmed all files are HTML ("fake .xls"), so we prioritize read_html.
+    html_error = None
     try:
-        df = pd.read_excel(io.BytesIO(contents), engine='xlrd') # Specify engine for .xls files
+        # Try parsing as HTML table first
+        # default flavor='bs4' uses lxml or html5lib.
+        dfs = pd.read_html(io.BytesIO(contents), flavor='bs4', header=None)
+        if not dfs:
+             # If read_html runs but finds no tables, try excel just in case
+             raise ValueError("No tables found in HTML")
+        df = dfs # agent.invoke handles list of DataFrames
     except Exception as e:
-        return {"error": f"Error reading Excel file: {e}"}
+        html_error = e
+        # Fallback: Try standard Excel parsing (xlrd) if HTML parsing failed
+        try:
+            df = pd.read_excel(io.BytesIO(contents), engine='xlrd')
+        except Exception as excel_e:
+            return {"error": f"Error reading file. \nHTML Parse Error: {html_error} \nExcel Parse Error: {excel_e}"}
     
     msg = agent.invoke(df)
     
