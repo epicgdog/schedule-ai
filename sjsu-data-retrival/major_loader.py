@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging
 import os
 import re
@@ -64,12 +65,12 @@ def parse_program_links(md_path: Path) -> Iterable[Tuple[str, str]]:
 
 
 def fetch_description(url: str) -> str:
-    """Fetch and return plain-text block for a program URL."""
+    """Fetch and return JSON string of requirements for a program URL."""
     soup = scrape_url(url)
     if not soup:
-        return ""
+        return "[]"
     block = extract_program_block(soup)
-    return block or ""
+    return json.dumps(block) if block else "[]"
 
 
 def upsert_reqs(rows: Sequence[Tuple[str, str]]) -> None:

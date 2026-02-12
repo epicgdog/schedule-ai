@@ -14,7 +14,7 @@ def scrape_url(url: str) -> BeautifulSoup | None:
         return None
 
 
-def extract_program_block(soup: BeautifulSoup) -> str | None:
+def extract_program_block(soup: BeautifulSoup) -> list[str] | None:
     """Return plain text of the second <tr> of the main program table.
 
     We anchor on the program title <h1>, climb to its containing table, and
@@ -32,9 +32,14 @@ def extract_program_block(soup: BeautifulSoup) -> str | None:
     if not target:
         return None
 
-    raw_text = target.get_text(" ", strip=True)
-    cleaned = re.sub(r"\s+", " ", raw_text)
-    return cleaned or None
+    # raw_text = target.get_text(" ", strip=True)
+    # cleaned = re.sub(r"\s+", " ", raw_text)
+    # cleaned = cleaned.replace("unit(s)", "")
+
+    regex_filter = r"[A-Z]{2,4} [0-9]{1,3}[A-Z]{0,2}"
+
+    cleanedList = re.findall(regex_filter, target.get_text())     
+    return cleanedList or None
 
 
 if __name__ == "__main__":
