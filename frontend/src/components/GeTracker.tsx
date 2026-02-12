@@ -56,10 +56,11 @@ const GeTracker: React.FC<GeTrackerProps> = ({ geCourses }) => {
     const categories = Object.keys(GE_UNITS_REQUIRED);
 
     return (
+
         <div className="w-full mt-8 p-6 bg-gray-900 rounded-lg border border-gray-700">
             <h2 className="text-2xl font-bold mb-6 text-white border-b border-gray-700 pb-2">GE Progress Tracker</h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {categories.map((catKey) => {
                     const requirements = GE_UNITS_REQUIRED[catKey];
                     const progress = geCourses[catKey] || { Areas: [], Units: 0, Courses: [] };
@@ -88,7 +89,10 @@ const GeTracker: React.FC<GeTrackerProps> = ({ geCourses }) => {
                             <div className="flex justify-between items-start mb-3">
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <h3 className="text-xl font-bold text-gray-100">Area {catKey}</h3>
+                                        <h3 className="text-xl font-bold text-gray-100">Area {
+                                            // if catKey is "US" display "US History, Constitution, & California Govt" impliment later
+                                            catKey 
+                                        }</h3>
                                         {status === 'completed' && (
                                             <span className="text-green-400 text-lg">✓</span>
                                         )}
@@ -212,7 +216,7 @@ const GeTracker: React.FC<GeTrackerProps> = ({ geCourses }) => {
                 </div>
             )}
         </div>
-    );
+ );
 };
 
 export default GeTracker;
