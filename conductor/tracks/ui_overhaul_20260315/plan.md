@@ -28,7 +28,7 @@
     - [x] Verify that uploaded courses update the global `courseHistory` state.
 - [x] Task: Conductor - User Manual Verification 'Global State & Transcript Processing' (Protocol in workflow.md) b49aae9
 
-## Phase 3: Component Overhaul (Tree & GE)
+## Phase 3: Component Overhaul (Tree & GE) [checkpoint: 0af4213]
 *Objective: Update primary views with new styles and completion status logic.*
 
 - [x] Task: Frontend - Enhanced CourseTree 602c6ad
@@ -39,7 +39,7 @@
     - [x] Refactor `GeTracker.tsx` to use the new glassmorphism panels.
     - [x] Ensure progress bars and status badges are updated based on global `courseHistory`.
     - [x] Verify layout responsiveness.
-- [ ] Task: Conductor - User Manual Verification 'Component Overhaul (Tree & GE)' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Component Overhaul (Tree & GE)' (Protocol in workflow.md) 0af4213
 
 ## Phase 4: Interaction Layer & Polish
 *Objective: Finalize the interactive experience and visual details.*
