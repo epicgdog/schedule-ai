@@ -3,9 +3,9 @@
 ## Phase 1: Context-Based Caching & Persistence
 *Objective: Centralize data fetching and enable cross-session persistence.*
 
-- [ ] Task: Frontend - Cache State in PlannerContext
-    - [ ] Update `PlannerContext.tsx` to include `treeCache` and `electiveCache`.
-    - [ ] Implement `loadMajorData(poid)` action in context that handles caching and fetching.
+- [x] Task: Frontend - Cache State in PlannerContext 547e463
+    - [x] Update `PlannerContext.tsx` to include `treeCache` and `electiveCache`.
+    - [x] Implement `loadMajorData(poid)` action in context that handles caching and fetching.
 - [ ] Task: Frontend - LocalStorage Persistence
     - [ ] Implement `useEffect` in `PlannerContext` to sync cache to `localStorage`.
     - [ ] Implement hydration logic to load cache on startup.
