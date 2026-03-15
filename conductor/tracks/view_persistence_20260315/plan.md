@@ -1,0 +1,38 @@
+# Implementation Plan: Hybrid View Persistence & Dynamic Progress Tracking
+
+## Phase 1: Context-Based Caching & Persistence
+*Objective: Centralize data fetching and enable cross-session persistence.*
+
+- [ ] Task: Frontend - Cache State in PlannerContext
+    - [ ] Update `PlannerContext.tsx` to include `treeCache` and `electiveCache`.
+    - [ ] Implement `loadMajorData(poid)` action in context that handles caching and fetching.
+- [ ] Task: Frontend - LocalStorage Persistence
+    - [ ] Implement `useEffect` in `PlannerContext` to sync cache to `localStorage`.
+    - [ ] Implement hydration logic to load cache on startup.
+- [ ] Task: Conductor - User Manual Verification 'Context-Based Caching & Persistence' (Protocol in workflow.md)
+
+## Phase 2: Persistent Dashboard Layout
+*Objective: Prevent component unmounting to preserve UI state (zoom/pan).*
+
+- [ ] Task: Frontend - CSS-based Tab Switching
+    - [ ] Refactor `App.tsx` to render all tab components simultaneously.
+    - [ ] Use Tailwind `hidden` class or `display: none` based on `activeTab`.
+- [ ] Task: Frontend - Component Refactor for Context Data
+    - [ ] Update `CourseTree.tsx` to consume data from `PlannerContext` instead of fetching internally.
+    - [ ] Update `ElectiveList.tsx` to consume data from `PlannerContext`.
+- [ ] Task: Conductor - User Manual Verification 'Persistent Dashboard Layout' (Protocol in workflow.md)
+
+## Phase 3: Reactive Progress Visualization
+*Objective: Ensure the tree and elective lists react instantly to transcript uploads.*
+
+- [ ] Task: Frontend - Reactive Node Styling (Course Tree)
+    - [ ] Update `CourseTree.tsx` to watch `courseHistory` and dynamically calculate node states (Completed, Available, Locked).
+    - [ ] Refine visual styles in Cytoscape for "Completed", "Available" (need to take), and "Locked" nodes without re-initializing the graph.
+- [ ] Task: Frontend - Reactive Elective Tracking
+    - [ ] Update `ElectiveList.tsx` to evaluate `courseHistory` against available choices.
+    - [ ] Add visual indicators for completed electives (e.g., checked off, green text).
+    - [ ] Update requirement logic to clearly indicate how many choices are still needed.
+- [ ] Task: Frontend - Polish & Cleanup
+    - [ ] Ensure `TranscriptUploader` correctly triggers the global state update for both components.
+    - [ ] Remove redundant `useEffect` hooks and local states from components.
+- [ ] Task: Conductor - User Manual Verification 'Reactive Progress Visualization' (Protocol in workflow.md)
