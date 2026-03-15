@@ -157,7 +157,7 @@ const CourseTree: React.FC<CourseTreeProps> = ({ poid }) => {
     const filteredEdges = graph.edges.map(edge => ({
       data: {
         ...edge.data,
-        isCompleted: completedCourses.has(graph.nodes.find(n => n.data.id === edge.data.source)?.data.label || '')
+        isCompleted: completedCourses.has(graph.nodes.find(n => n.data.id === edge.data.target)?.data.label || '')
       }
     })).filter(edge => 
       visibleNodeIds.has(edge.data.source) && visibleNodeIds.has(edge.data.target)
