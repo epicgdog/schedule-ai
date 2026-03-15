@@ -41,14 +41,16 @@ logging.basicConfig(
 
 # ── SQLAlchemy setup ─────────────────────────────────────────────
 # Create engine and reflect tables once at module level
-DATABASE = os.getenv("DATABASE")
-engine = create_engine(f"sqlite:///{DATABASE}")
+from db import get_engine
+engine = get_engine()
 metadata = MetaData()
-metadata.reflect(bind=engine)
+metadata.reflect(bind=engine, only=["ge_courses"])
 
 # Table references
-ge_courses_table = metadata.tables["ge_courses"]
-ap_table = metadata.tables["ap_articulation"]
+if "ge_courses" in metadata.tables:
+    ge_courses_table = metadata.tables["ge_courses"]
+if "ap_articulation" in metadata.tables:
+    ap_table = metadata.tables["ap_articulation"]
 
 # Initialize LLM
 llm = ChatOpenAI(
@@ -159,7 +161,7 @@ def area_regex(txt: str) -> list[str]:
     # Deduplicate matches
     return list(set(matches))
 
-def invoke(transcript_str: DataFrame) -> Dict:
+def invoke(transcript_str: pd.DataFrame) -> dict:
     logging.info("Starting transcript analysis...")
 
     # Step 1: Extract major, classes, and AP credits from transcript
