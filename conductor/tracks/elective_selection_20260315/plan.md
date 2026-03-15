@@ -26,7 +26,7 @@
     - [x] Verify test passes and smooth transitions are implemented.
 - [x] Task: Conductor - User Manual Verification 'Frontend Component Refactoring' (Protocol in workflow.md) b04059f
 
-## Phase 3: Integration and Visualization
+## Phase 3: Integration and Visualization [checkpoint: 0d9bb4b]
 *Objective: Connect the frontend components and enhance the course tree visualization.*
 
 - [x] Task: Frontend - Global State Management b6f40a9
@@ -37,4 +37,4 @@
     - [x] Write failing test for department filtering in `CourseTree.tsx`.
     - [x] Implement multi-select filter for departments in `CourseTree.tsx`.
     - [x] Verify test passes and graph updates correctly.
-- [ ] Task: Conductor - User Manual Verification 'Integration and Visualization' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Integration and Visualization' (Protocol in workflow.md) 0d9bb4b
