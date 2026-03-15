@@ -4,9 +4,10 @@ import CourseTree from './components/CourseTree';
 import ElectiveList from './components/ElectiveList';
 import DashboardLayout from './components/DashboardLayout';
 import { TabId } from './components/Sidebar';
+import { usePlanner } from './context/PlannerContext';
 
 function App() {
-  const [selectedPoid, setSelectedPoid] = useState<string>('13772'); // Default to CS BS
+  const { selectedPoid, setSelectedPoid } = usePlanner();
   const [activeTab, setActiveTab] = useState<TabId>('tree');
 
   return (
@@ -51,8 +52,6 @@ function App() {
               </section>
             )}
 
-            {/* Always show electives if they exist for the major? Or keep separate? */}
-            {/* For now, show them below the tree in the tree view */}
             {activeTab === 'tree' && (
               <section className="glass-panel p-8 rounded-3xl border border-white/10 shadow-2xl">
                 <ElectiveList poid={selectedPoid} />

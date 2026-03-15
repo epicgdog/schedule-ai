@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import App from '../App';
 import React from 'react';
+import { PlannerProvider } from '../context/PlannerContext';
 
 // Mock child components to simplify App tests
 vi.mock('../components/MajorDropdown', () => ({
@@ -37,7 +38,11 @@ vi.mock('../components/DashboardLayout', () => ({
 
 describe('App', () => {
   it('renders correctly and manages selected poid', async () => {
-    render(<App />);
+    render(
+      <PlannerProvider>
+        <App />
+      </PlannerProvider>
+    );
 
     expect(screen.getByText(/Academic Planner/i)).toBeInTheDocument();
     expect(screen.getByTestId('course-tree')).toHaveTextContent('Tree for 13772');
@@ -50,7 +55,11 @@ describe('App', () => {
   });
 
   it('manages active tab state', () => {
-    render(<App />);
+    render(
+      <PlannerProvider>
+        <App />
+      </PlannerProvider>
+    );
     
     expect(screen.getByTestId('tab-indicator')).toHaveTextContent('tree');
     
