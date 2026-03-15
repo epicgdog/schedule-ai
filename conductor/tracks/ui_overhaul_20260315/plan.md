@@ -35,10 +35,10 @@
     - [x] Update `CourseTree.tsx` to accept `courseHistory` and highlight completed nodes.
     - [x] Apply glassmorphism styles to the floating filter panel.
     - [x] Verify node highlighting logic via unit tests.
-- [ ] Task: Frontend - Enhanced GeTracker
-    - [ ] Refactor `GeTracker.tsx` to use the new glassmorphism panels.
-    - [ ] Ensure progress bars and status badges are updated based on global `courseHistory`.
-    - [ ] Verify layout responsiveness.
+- [x] Task: Frontend - Enhanced GeTracker 126ae53
+    - [x] Refactor `GeTracker.tsx` to use the new glassmorphism panels.
+    - [x] Ensure progress bars and status badges are updated based on global `courseHistory`.
+    - [x] Verify layout responsiveness.
 - [ ] Task: Conductor - User Manual Verification 'Component Overhaul (Tree & GE)' (Protocol in workflow.md)
 
 ## Phase 4: Interaction Layer & Polish
