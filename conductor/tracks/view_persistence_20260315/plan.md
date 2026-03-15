@@ -28,10 +28,10 @@
 - [x] Task: Frontend - Reactive Node Styling (Course Tree) df23416
     - [x] Update `CourseTree.tsx` to watch `courseHistory` and dynamically calculate node states (Completed, Available, Locked).
     - [x] Refine visual styles in Cytoscape for "Completed", "Available" (need to take), and "Locked" nodes without re-initializing the graph.
-- [ ] Task: Frontend - Reactive Elective Tracking
-    - [ ] Update `ElectiveList.tsx` to evaluate `courseHistory` against available choices.
-    - [ ] Add visual indicators for completed electives (e.g., checked off, green text).
-    - [ ] Update requirement logic to clearly indicate how many choices are still needed.
+- [x] Task: Frontend - Reactive Elective Tracking b47b0a8
+    - [x] Update `ElectiveList.tsx` to evaluate `courseHistory` against available choices.
+    - [x] Add visual indicators for completed electives (e.g., checked off, green text).
+    - [x] Update requirement logic to clearly indicate how many choices are still needed.
 - [ ] Task: Frontend - Polish & Cleanup
     - [ ] Ensure `TranscriptUploader` correctly triggers the global state update for both components.
     - [ ] Remove redundant `useEffect` hooks and local states from components.
