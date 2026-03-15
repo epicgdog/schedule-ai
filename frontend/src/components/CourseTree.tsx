@@ -111,24 +111,55 @@ const CourseTree: React.FC<CourseTreeProps> = ({ poid }) => {
     );
     const visibleNodeIds = new Set(filteredNodes.map(n => n.data.id));
 
+    // Pre-calculate dependencies to determine "Available" status
+    const nodePreReqs = new Map<string, string[]>();
+    graph.edges.forEach(edge => {
+      const target = edge.data.target;
+      const source = edge.data.source;
+      if (!nodePreReqs.has(target)) {
+        nodePreReqs.set(target, []);
+      }
+      nodePreReqs.get(target)!.push(source);
+    });
+
     const nodeEls = filteredNodes.map((node) => {
       const dept = node.data.department || 'OTHER';
       const color = DEPT_COLORS[dept] || '#6b7280';
       const isCompleted = completedCourses.has(node.data.label);
       
+      let isAvailable = false;
+      if (!isCompleted) {
+        const prereqs = nodePreReqs.get(node.data.id) || [];
+        // If all direct prerequisites are completed, it's available
+        isAvailable = prereqs.every(prereqId => {
+          const prereqNode = graph.nodes.find(n => n.data.id === prereqId);
+          return prereqNode ? completedCourses.has(prereqNode.data.label) : true; 
+        });
+      }
+
+      // If neither completed nor available (and has prereqs), it's locked
+      const isLocked = !isCompleted && !isAvailable && (nodePreReqs.get(node.data.id) || []).length > 0;
+
       return {
         data: {
           ...node.data,
-          color,
-          borderColor: isCompleted ? '#4ade80' : (node.data.is_root ? '#f2c94c' : '#2d3748'),
-          borderWidth: isCompleted ? 4 : 2,
-          isCompleted
+          color: isLocked ? '#475569' : color, // Dim color if locked
+          borderColor: isCompleted ? '#4ade80' : isAvailable ? '#60a5fa' : (node.data.is_root ? '#f2c94c' : '#2d3748'),
+          borderWidth: isCompleted || isAvailable ? 3 : 2,
+          isCompleted,
+          isAvailable,
+          isLocked
         },
       };
     });
 
     // Filter edges (both source and target must be visible)
-    const filteredEdges = graph.edges.filter(edge => 
+    const filteredEdges = graph.edges.map(edge => ({
+      data: {
+        ...edge.data,
+        isCompleted: completedCourses.has(graph.nodes.find(n => n.data.id === edge.data.source)?.data.label || '')
+      }
+    })).filter(edge => 
       visibleNodeIds.has(edge.data.source) && visibleNodeIds.has(edge.data.target)
     );
 
@@ -185,17 +216,39 @@ const CourseTree: React.FC<CourseTreeProps> = ({ poid }) => {
           }
         },
         {
+          selector: 'node[?isAvailable]',
+          style: {
+            'shadow-blur': 15,
+            'shadow-color': '#60a5fa',
+            'shadow-opacity': 0.3,
+          }
+        },
+        {
+          selector: 'node[?isLocked]',
+          style: {
+            opacity: 0.5,
+          }
+        },
+        {
           selector: 'edge',
           style: {
             width: 2,
-            'line-color': '#94a3b8',
-            'target-arrow-color': '#94a3b8',
+            'line-color': '#475569',
+            'target-arrow-color': '#475569',
             'target-arrow-shape': 'triangle',
             'curve-style': 'bezier',
             'arrow-scale': 0.9,
             'transition-property': 'line-color, target-arrow-color, width, opacity',
             'transition-duration': 200,
           },
+        },
+        {
+          selector: 'edge[?isCompleted]',
+          style: {
+            'line-color': '#4ade80',
+            'target-arrow-color': '#4ade80',
+            opacity: 0.6,
+          }
         },
         {
           selector: 'node.highlighted',
