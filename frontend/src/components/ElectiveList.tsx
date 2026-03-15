@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ChevronDown, BookOpen, Info, Loader2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { ChevronDown, BookOpen, Info, Loader2, CheckCircle2 } from 'lucide-react';
 import Skeleton from './ui/Skeleton';
 import { usePlanner } from '../context/PlannerContext';
 
@@ -19,8 +19,7 @@ interface ElectiveListProps {
   poid: string;
 }
 
-const ElectiveCourseItem: React.FC<{ code: string }> = ({ code }) => {
-// ... existing ElectiveCourseItem code ...
+const ElectiveCourseItem: React.FC<{ code: string; isCompleted: boolean }> = ({ code, isCompleted }) => {
   const [expanded, setExpanded] = useState(false);
   const [details, setDetails] = useState<CourseDetails | null>(null);
   const [loading, setLoading] = useState(false);
@@ -48,20 +47,26 @@ const ElectiveCourseItem: React.FC<{ code: string }> = ({ code }) => {
       <button
         onClick={toggleExpand}
         className={`w-full text-left px-4 py-3 rounded-xl border transition-all flex justify-between items-center group ${
-          expanded 
-            ? 'bg-blue-600/10 border-blue-500/30 text-blue-400 shadow-[0_0_15px_rgba(37,99,235,0.1)]' 
-            : 'bg-white/5 border-white/5 text-gray-400 hover:border-white/10 hover:text-white'
+          isCompleted
+            ? 'bg-green-500/10 border-green-500/30 text-green-400 shadow-[0_0_15px_rgba(74,222,128,0.1)]'
+            : expanded 
+              ? 'bg-blue-600/10 border-blue-500/30 text-blue-400 shadow-[0_0_15px_rgba(37,99,235,0.1)]' 
+              : 'bg-white/5 border-white/5 text-gray-400 hover:border-white/10 hover:text-white'
         }`}
       >
         <div className="flex items-center gap-2">
-          <BookOpen className={`w-3.5 h-3.5 transition-colors ${expanded ? 'text-blue-400' : 'text-gray-500 group-hover:text-gray-300'}`} />
+          {isCompleted ? (
+             <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+          ) : (
+             <BookOpen className={`w-3.5 h-3.5 transition-colors ${expanded ? 'text-blue-400' : 'text-gray-500 group-hover:text-gray-300'}`} />
+          )}
           <span className="text-xs font-bold tracking-wide uppercase">{code}</span>
         </div>
         <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${expanded ? 'rotate-180' : 'opacity-40'}`} />
       </button>
       
       {expanded && (
-        <div className="mt-2 p-4 bg-black/40 border border-white/5 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className={`mt-2 p-4 bg-black/40 border rounded-2xl animate-in fade-in slide-in-from-top-2 duration-300 ${isCompleted ? 'border-green-500/20' : 'border-white/5'}`}>
           {loading ? (
             <div className="space-y-2">
               <Skeleton className="h-4 w-3/4" />
@@ -70,7 +75,7 @@ const ElectiveCourseItem: React.FC<{ code: string }> = ({ code }) => {
             </div>
           ) : details ? (
             <div className="space-y-3">
-              <div className="font-bold text-white text-sm leading-tight">{details.course_name}</div>
+              <div className={`font-bold text-sm leading-tight ${isCompleted ? 'text-green-300' : 'text-white'}`}>{details.course_name}</div>
               <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/5 text-[10px] text-gray-500 font-bold uppercase tracking-wider">
                 {details.units} Units
               </div>
@@ -91,11 +96,29 @@ const ElectiveCourseItem: React.FC<{ code: string }> = ({ code }) => {
 };
 
 const ElectiveList: React.FC<ElectiveListProps> = ({ poid }) => {
-  const { electiveCache, loadingState } = usePlanner();
+  const { electiveCache, loadingState, courseHistory } = usePlanner();
   const electives: ElectiveGroup[] = electiveCache[poid] || [];
   const loading = loadingState.electives;
   const error = null;
   const [expandedGroup, setExpandedGroup] = useState<number | null>(null);
+
+  const completedCourses = useMemo(() => {
+    if (!courseHistory) return new Set<string>();
+    
+    const codes = new Set<string>();
+    Object.values(courseHistory.Major_Courses || {}).forEach((item: any) => {
+      if (item.Courses) {
+        item.Courses.forEach((c: string) => codes.add(c.trim()));
+      }
+    });
+    Object.values(courseHistory.GE_Courses || {}).forEach((item: any) => {
+      if (item.Courses) {
+        item.Courses.forEach((c: string) => codes.add(c.trim()));
+      }
+    });
+    
+    return codes;
+  }, [courseHistory]);
 
   if (loading) {
     return (
