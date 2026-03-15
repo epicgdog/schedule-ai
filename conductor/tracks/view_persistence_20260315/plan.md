@@ -14,9 +14,9 @@
 ## Phase 2: Persistent Dashboard Layout
 *Objective: Prevent component unmounting to preserve UI state (zoom/pan).*
 
-- [ ] Task: Frontend - CSS-based Tab Switching
-    - [ ] Refactor `App.tsx` to render all tab components simultaneously.
-    - [ ] Use Tailwind `hidden` class or `display: none` based on `activeTab`.
+- [x] Task: Frontend - CSS-based Tab Switching d9d2057
+    - [x] Refactor `App.tsx` to render all tab components simultaneously.
+    - [x] Use Tailwind `hidden` class or `display: none` based on `activeTab`.
 - [x] Task: Frontend - Component Refactor for Context Data 4ee93a6
     - [x] Update `CourseTree.tsx` to consume data from `PlannerContext` instead of fetching internally.
     - [x] Update `ElectiveList.tsx` to consume data from `PlannerContext`.
