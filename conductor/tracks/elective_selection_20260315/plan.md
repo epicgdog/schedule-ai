@@ -20,10 +20,10 @@
     - [x] Write failing test for `MajorDropdown.tsx` to ensure it fetches from `/api/programs`.
     - [x] Update `MajorDropdown.tsx` to fetch and render dynamic options.
     - [x] Verify test passes and styling matches guidelines.
-- [ ] Task: Frontend - Accordion Elective List
-    - [ ] Write failing test for `ElectiveList.tsx` accordion behavior and on-demand fetching.
-    - [ ] Refactor `ElectiveList.tsx` into an accordion with `ElectiveCourseItem` sub-components.
-    - [ ] Verify test passes and smooth transitions are implemented.
+- [x] Task: Frontend - Accordion Elective List 78640cd
+    - [x] Write failing test for `ElectiveList.tsx` accordion behavior and on-demand fetching.
+    - [x] Refactor `ElectiveList.tsx` into an accordion with `ElectiveCourseItem` sub-components.
+    - [x] Verify test passes and smooth transitions are implemented.
 - [ ] Task: Conductor - User Manual Verification 'Frontend Component Refactoring' (Protocol in workflow.md)
 
 ## Phase 3: Integration and Visualization
