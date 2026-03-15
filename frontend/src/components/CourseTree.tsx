@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
 import { usePlanner } from '../context/PlannerContext';
+import CourseDetailModal from './CourseDetailModal';
 
 cytoscape.use(dagre);
 
@@ -51,6 +52,10 @@ const CourseTree: React.FC<CourseTreeProps> = ({ poid }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hiddenDepts, setHiddenDepts] = useState<Set<string>>(new Set());
+
+  // Modal state
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Helper to get all completed course codes
   const completedCourses = useMemo(() => {
@@ -274,6 +279,13 @@ const CourseTree: React.FC<CourseTreeProps> = ({ poid }) => {
       cy.elements().removeClass('faded highlighted');
     });
 
+    // Handle clicks
+    cyRef.current.on('tap', 'node', (e) => {
+      const node = e.target;
+      setSelectedCourse(node.data('label'));
+      setIsModalOpen(true);
+    });
+
     return () => {
       if (cyRef.current) {
         cyRef.current.destroy();
@@ -355,6 +367,12 @@ const CourseTree: React.FC<CourseTreeProps> = ({ poid }) => {
       </div>
       
       <div className="flex-1 relative bg-black/40 shadow-inner" ref={containerRef} />
+
+      <CourseDetailModal 
+        courseCode={selectedCourse}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 };
