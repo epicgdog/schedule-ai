@@ -1,5 +1,6 @@
 import React from 'react';
 import { GitBranch, BarChart3, Calendar, Upload, BookOpen, Search, Star, History, AlertTriangle } from 'lucide-react';
+import TranscriptUploader from './TranscriptUploader';
 
 export type TabId = 'tree' | 'ge' | 'schedule' | 'programs' | 'search' | 'ratings';
 
@@ -54,10 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
         <div>
           <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Transcript Analysis</h3>
           <div className="space-y-1">
-            <button className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-400 hover:text-white transition-colors rounded-xl hover:bg-white/5 group border border-transparent">
-              <Upload className="w-4.5 h-4.5 group-hover:text-blue-400 transition-colors" />
-              <span className="font-medium text-sm">Upload Record</span>
-            </button>
+            <TranscriptUploader />
             <button className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-400 hover:text-white transition-colors rounded-xl hover:bg-white/5 border border-transparent">
               <History className="w-4.5 h-4.5" />
               <span className="font-medium text-sm">Course History</span>
