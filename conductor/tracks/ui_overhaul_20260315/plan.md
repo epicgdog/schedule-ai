@@ -44,10 +44,10 @@
 ## Phase 4: Interaction Layer & Polish
 *Objective: Finalize the interactive experience and visual details.*
 
-- [ ] Task: Frontend - Course Detail Modal
-    - [ ] Write failing test for `CourseDetailModal.tsx`.
-    - [ ] Implement the modal with support for description, units, and `ElectiveList`.
-    - [ ] Connect `CourseTree` node clicks to trigger this modal.
+- [x] Task: Frontend - Course Detail Modal 5bc5a5a
+    - [x] Write failing test for `CourseDetailModal.tsx`.
+    - [x] Implement the modal with support for description, units, and `ElectiveList`.
+    - [x] Connect `CourseTree` node clicks to trigger this modal.
 - [ ] Task: Frontend - Animation & Polish
     - [ ] Add `framer-motion` (or similar) for view transitions.
     - [ ] Implement skeleton loaders for graph and elective data fetching.
