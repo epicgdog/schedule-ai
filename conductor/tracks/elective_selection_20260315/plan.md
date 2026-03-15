@@ -3,10 +3,10 @@
 ## Phase 1: Backend API Consolidation and Expansion
 *Objective: Ensure all necessary data is available through the FastAPI backend.*
 
-- [ ] Task: Backend - Programs List Endpoint
-    - [ ] Write failing test for `GET /api/programs` in `server/tests/test_api.py`.
-    - [ ] Implement the `/api/programs` endpoint in `server/main.py`.
-    - [ ] Verify test passes and coverage is maintained.
+- [x] Task: Backend - Programs List Endpoint d649bc6
+    - [x] Write failing test for `GET /api/programs` in `server/tests/test_api.py`.
+    - [x] Implement the `/api/programs` endpoint in `server/main.py`.
+    - [x] Verify test passes and coverage is maintained.
 - [ ] Task: Backend - Course Detail Endpoint
     - [ ] Write failing test for `GET /api/course/{course_code}` in `server/tests/test_api.py`.
     - [ ] Implement the `/api/course/{course_code}` endpoint in `server/main.py`.
