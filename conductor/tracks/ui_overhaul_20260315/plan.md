@@ -16,7 +16,7 @@
     - [x] Verify test passes.
 - [x] Task: Conductor - User Manual Verification 'Dashboard Scaffolding & Glassmorphism Theme' (Protocol in workflow.md) 1c005a5
 
-## Phase 2: Global State & Transcript Processing
+## Phase 2: Global State & Transcript Processing [checkpoint: b49aae9]
 *Objective: Centralize state and enable personalized progress tracking.*
 
 - [x] Task: Frontend - Global State Management 803a6d9
@@ -26,7 +26,7 @@
     - [x] Write failing test for `TranscriptUploader.tsx` (wrapping `CourseInput` logic).
     - [x] Integrate the uploader into the Sidebar or Header.
     - [x] Verify that uploaded courses update the global `courseHistory` state.
-- [ ] Task: Conductor - User Manual Verification 'Global State & Transcript Processing' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Global State & Transcript Processing' (Protocol in workflow.md) b49aae9
 
 ## Phase 3: Component Overhaul (Tree & GE)
 *Objective: Update primary views with new styles and completion status logic.*
