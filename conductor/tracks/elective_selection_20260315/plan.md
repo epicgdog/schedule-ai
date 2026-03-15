@@ -33,8 +33,8 @@
     - [x] Write failing test for `App.tsx` ensuring `poid` state updates correctly.
     - [x] Update `App.tsx` to manage selected major and pass it to `CourseTree`.
     - [x] Verify test passes.
-- [ ] Task: Frontend - Course Tree Department Filtering
-    - [ ] Write failing test for department filtering in `CourseTree.tsx`.
-    - [ ] Implement multi-select filter for departments in `CourseTree.tsx`.
-    - [ ] Verify test passes and graph updates correctly.
+- [x] Task: Frontend - Course Tree Department Filtering 72c8d6f
+    - [x] Write failing test for department filtering in `CourseTree.tsx`.
+    - [x] Implement multi-select filter for departments in `CourseTree.tsx`.
+    - [x] Verify test passes and graph updates correctly.
 - [ ] Task: Conductor - User Manual Verification 'Integration and Visualization' (Protocol in workflow.md)
