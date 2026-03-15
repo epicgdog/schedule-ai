@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: UI/UX Overhaul: Unified Glassmorphism Dashboard and Transcript Integration**
+- [x] **Track: UI/UX Overhaul: Unified Glassmorphism Dashboard and Transcript Integration**
   *Link: [./tracks/ui_overhaul_20260315/](./tracks/ui_overhaul_20260315/)*
