@@ -3,9 +3,9 @@
 ## Phase 1: Dashboard Scaffolding & Glassmorphism Theme
 *Objective: Establish the new layout and visual baseline.*
 
-- [ ] Task: Frontend - Glassmorphism UI Components
-    - [ ] Create `GlassPanel.tsx` and `GlassButton.tsx` primitive components with backdrop-blur and transparency.
-    - [ ] Define global CSS variables for glassmorphism colors in `index.css`.
+- [x] Task: Frontend - Glassmorphism UI Components 91e6a75
+    - [x] Create `GlassPanel.tsx` and `GlassButton.tsx` primitive components with backdrop-blur and transparency.
+    - [x] Define global CSS variables for glassmorphism colors in `index.css`.
 - [ ] Task: Frontend - Sidebar Navigation
     - [ ] Write failing test for `Sidebar.tsx` ensuring it switches active views.
     - [ ] Implement `Sidebar.tsx` with icons for Tree, GE, and Schedule.
