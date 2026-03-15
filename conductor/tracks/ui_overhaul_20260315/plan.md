@@ -19,9 +19,9 @@
 ## Phase 2: Global State & Transcript Processing
 *Objective: Centralize state and enable personalized progress tracking.*
 
-- [ ] Task: Frontend - Global State Management
-    - [ ] Setup React Context (or similar) to manage: `selectedMajor`, `courseHistory`, and `plannedCourses`.
-    - [ ] Refactor existing components to use global state instead of local prop drilling.
+- [x] Task: Frontend - Global State Management 803a6d9
+    - [x] Setup React Context (or similar) to manage: `selectedMajor`, `courseHistory`, and `plannedCourses`.
+    - [x] Refactor existing components to use global state instead of local prop drilling.
 - [ ] Task: Frontend - Transcript Upload Integration
     - [ ] Write failing test for `TranscriptUploader.tsx` (wrapping `CourseInput` logic).
     - [ ] Integrate the uploader into the Sidebar or Header.
