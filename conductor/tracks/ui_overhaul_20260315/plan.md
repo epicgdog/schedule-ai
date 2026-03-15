@@ -22,10 +22,10 @@
 - [x] Task: Frontend - Global State Management 803a6d9
     - [x] Setup React Context (or similar) to manage: `selectedMajor`, `courseHistory`, and `plannedCourses`.
     - [x] Refactor existing components to use global state instead of local prop drilling.
-- [ ] Task: Frontend - Transcript Upload Integration
-    - [ ] Write failing test for `TranscriptUploader.tsx` (wrapping `CourseInput` logic).
-    - [ ] Integrate the uploader into the Sidebar or Header.
-    - [ ] Verify that uploaded courses update the global `courseHistory` state.
+- [x] Task: Frontend - Transcript Upload Integration 6049986
+    - [x] Write failing test for `TranscriptUploader.tsx` (wrapping `CourseInput` logic).
+    - [x] Integrate the uploader into the Sidebar or Header.
+    - [x] Verify that uploaded courses update the global `courseHistory` state.
 - [ ] Task: Conductor - User Manual Verification 'Global State & Transcript Processing' (Protocol in workflow.md)
 
 ## Phase 3: Component Overhaul (Tree & GE)
