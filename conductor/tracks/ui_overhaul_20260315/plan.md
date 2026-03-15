@@ -48,8 +48,8 @@
     - [x] Write failing test for `CourseDetailModal.tsx`.
     - [x] Implement the modal with support for description, units, and `ElectiveList`.
     - [x] Connect `CourseTree` node clicks to trigger this modal.
-- [ ] Task: Frontend - Animation & Polish
-    - [ ] Add `framer-motion` (or similar) for view transitions.
-    - [ ] Implement skeleton loaders for graph and elective data fetching.
-    - [ ] Final visual pass for spacing and consistency.
+- [x] Task: Frontend - Animation & Polish e37e57c
+    - [x] Add `framer-motion` (or similar) for view transitions.
+    - [x] Implement skeleton loaders for graph and elective data fetching.
+    - [x] Final visual pass for spacing and consistency.
 - [ ] Task: Conductor - User Manual Verification 'Interaction Layer & Polish' (Protocol in workflow.md)
