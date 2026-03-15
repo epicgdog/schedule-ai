@@ -1,12 +1,12 @@
 # Implementation Plan: UI/UX Overhaul - Unified Glassmorphism Dashboard
 
-## Phase 1: Dashboard Scaffolding & Glassmorphism Theme
+## Phase 1: Dashboard Scaffolding & Glassmorphism Theme [checkpoint: 1c005a5]
 *Objective: Establish the new layout and visual baseline.*
 
 - [x] Task: Frontend - Glassmorphism UI Components 91e6a75
     - [x] Create `GlassPanel.tsx` and `GlassButton.tsx` primitive components with backdrop-blur and transparency.
     - [x] Define global CSS variables for glassmorphism colors in `index.css`.
-- [x] Task: Frontend - Sidebar Navigation 6e53f4d
+- [x] Task: Frontend - Sidebar Navigation 665b4fe
     - [x] Write failing test for `Sidebar.tsx` ensuring it switches active views.
     - [x] Implement `Sidebar.tsx` with icons for Tree, GE, and Schedule.
     - [x] Verify test passes and layout is fixed-width on desktop.
@@ -14,7 +14,7 @@
     - [x] Write failing test for `DashboardLayout.tsx` ensuring it renders children and sidebar correctly.
     - [x] Refactor `App.tsx` to use `DashboardLayout`.
     - [x] Verify test passes.
-- [ ] Task: Conductor - User Manual Verification 'Dashboard Scaffolding & Glassmorphism Theme' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Dashboard Scaffolding & Glassmorphism Theme' (Protocol in workflow.md) 1c005a5
 
 ## Phase 2: Global State & Transcript Processing
 *Objective: Centralize state and enable personalized progress tracking.*
