@@ -32,7 +32,7 @@
     - [x] Update `ElectiveList.tsx` to evaluate `courseHistory` against available choices.
     - [x] Add visual indicators for completed electives (e.g., checked off, green text).
     - [x] Update requirement logic to clearly indicate how many choices are still needed.
-- [ ] Task: Frontend - Polish & Cleanup
-    - [ ] Ensure `TranscriptUploader` correctly triggers the global state update for both components.
-    - [ ] Remove redundant `useEffect` hooks and local states from components.
+- [x] Task: Frontend - Polish & Cleanup 1c46f95
+    - [x] Ensure `TranscriptUploader` correctly triggers the global state update for both components.
+    - [x] Remove redundant `useEffect` hooks and local states from components.
 - [ ] Task: Conductor - User Manual Verification 'Reactive Progress Visualization' (Protocol in workflow.md)
