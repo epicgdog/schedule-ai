@@ -10,10 +10,10 @@
     - [x] Write failing test for `Sidebar.tsx` ensuring it switches active views.
     - [x] Implement `Sidebar.tsx` with icons for Tree, GE, and Schedule.
     - [x] Verify test passes and layout is fixed-width on desktop.
-- [ ] Task: Frontend - Dashboard Layout Integration
-    - [ ] Write failing test for `DashboardLayout.tsx` ensuring it renders children and sidebar correctly.
-    - [ ] Refactor `App.tsx` to use `DashboardLayout`.
-    - [ ] Verify test passes.
+- [x] Task: Frontend - Dashboard Layout Integration 6a4df6b
+    - [x] Write failing test for `DashboardLayout.tsx` ensuring it renders children and sidebar correctly.
+    - [x] Refactor `App.tsx` to use `DashboardLayout`.
+    - [x] Verify test passes.
 - [ ] Task: Conductor - User Manual Verification 'Dashboard Scaffolding & Glassmorphism Theme' (Protocol in workflow.md)
 
 ## Phase 2: Global State & Transcript Processing
