@@ -15,7 +15,7 @@ Schedule AI is a specialized tool designed for San Jose State University (SJSU) 
 ## UI/UX Principles
 - **Modern Dashboard:** A unified, sidebar-driven interface that centralizes all planning tools.
 - **Visual-First:** Emphasize visual representation of course sequences and prerequisites to reduce cognitive load.
-- **Transcript Integration:** Automatically highlight completed courses and track progress by uploading SJSU transcripts.
+- **Transcript Integration:** Automatically highlight completed, available, and locked courses, and track elective progress by uploading SJSU transcripts.
 - **Accessibility:** Ensure that all features are easily accessible and clearly labeled for a diverse student body.
 
 ## Key Features
