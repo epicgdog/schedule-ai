@@ -16,10 +16,10 @@
 ## Phase 2: Frontend Component Refactoring
 *Objective: Create the necessary UI components for major selection and elective exploration.*
 
-- [ ] Task: Frontend - Dynamic Major Selection
-    - [ ] Write failing test for `MajorDropdown.tsx` to ensure it fetches from `/api/programs`.
-    - [ ] Update `MajorDropdown.tsx` to fetch and render dynamic options.
-    - [ ] Verify test passes and styling matches guidelines.
+- [x] Task: Frontend - Dynamic Major Selection 417eb84
+    - [x] Write failing test for `MajorDropdown.tsx` to ensure it fetches from `/api/programs`.
+    - [x] Update `MajorDropdown.tsx` to fetch and render dynamic options.
+    - [x] Verify test passes and styling matches guidelines.
 - [ ] Task: Frontend - Accordion Elective List
     - [ ] Write failing test for `ElectiveList.tsx` accordion behavior and on-demand fetching.
     - [ ] Refactor `ElectiveList.tsx` into an accordion with `ElectiveCourseItem` sub-components.
