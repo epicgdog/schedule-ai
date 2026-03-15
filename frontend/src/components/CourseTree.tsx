@@ -3,6 +3,7 @@ import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
 import { usePlanner } from '../context/PlannerContext';
 import CourseDetailModal from './CourseDetailModal';
+import Skeleton from './ui/Skeleton';
 
 cytoscape.use(dagre);
 
@@ -296,9 +297,19 @@ const CourseTree: React.FC<CourseTreeProps> = ({ poid }) => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <div className="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
-        <div className="text-gray-400 text-sm font-medium">Analyzing prerequisite structure...</div>
+      <div className="p-8 space-y-6">
+        <div className="flex justify-between items-end">
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-8 w-16 rounded-full" />
+            <Skeleton className="h-8 w-16 rounded-full" />
+            <Skeleton className="h-8 w-16 rounded-full" />
+          </div>
+        </div>
+        <Skeleton className="w-full h-[560px] rounded-2xl" />
       </div>
     );
   }

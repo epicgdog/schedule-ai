@@ -26,8 +26,11 @@ describe('ElectiveList', () => {
 
     await waitFor(() => {
       expect(screen.getByText('CS Electives')).toBeInTheDocument();
-      expect(screen.getByText('Complete 9 units')).toBeInTheDocument();
     });
+    
+    // Expand to see instructions
+    fireEvent.click(screen.getByText('CS Electives'));
+    expect(screen.getByText(/Complete 9 units/i)).toBeInTheDocument();
   });
 
   it('expands a group to show course choices', async () => {
