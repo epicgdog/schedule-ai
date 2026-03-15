@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ChevronDown, BookOpen, Info, Loader2 } from 'lucide-react';
 import Skeleton from './ui/Skeleton';
+import { usePlanner } from '../context/PlannerContext';
 
 interface ElectiveGroup {
   heading: string;
@@ -19,6 +20,7 @@ interface ElectiveListProps {
 }
 
 const ElectiveCourseItem: React.FC<{ code: string }> = ({ code }) => {
+// ... existing ElectiveCourseItem code ...
   const [expanded, setExpanded] = useState(false);
   const [details, setDetails] = useState<CourseDetails | null>(null);
   const [loading, setLoading] = useState(false);
@@ -89,31 +91,11 @@ const ElectiveCourseItem: React.FC<{ code: string }> = ({ code }) => {
 };
 
 const ElectiveList: React.FC<ElectiveListProps> = ({ poid }) => {
-  const [electives, setElectives] = useState<ElectiveGroup[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { electiveCache, loadingState } = usePlanner();
+  const electives: ElectiveGroup[] = electiveCache[poid] || [];
+  const loading = loadingState.electives;
+  const error = null;
   const [expandedGroup, setExpandedGroup] = useState<number | null>(null);
-
-  useEffect(() => {
-    async function fetchElectives() {
-      if (!poid) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`http://localhost:8000/api/electives/${encodeURIComponent(poid)}`);
-        if (!response.ok) throw new Error('Failed to fetch electives');
-        const data = await response.json();
-        setElectives(data.data || []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchElectives();
-    setExpandedGroup(null);
-  }, [poid]);
 
   if (loading) {
     return (

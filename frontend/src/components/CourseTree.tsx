@@ -45,13 +45,13 @@ const DEPT_COLORS: Record<string, string> = {
 };
 
 const CourseTree: React.FC<CourseTreeProps> = ({ poid }) => {
-  const { courseHistory } = usePlanner();
+  const { courseHistory, treeCache, loadingState } = usePlanner();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const cyRef = useRef<cytoscape.Core | null>(null);
 
-  const [graph, setGraph] = useState<GraphResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const graph = treeCache[poid] as GraphResponse | undefined;
+  const loading = loadingState.tree;
+  const error = null; // Error handling can be moved to context later if needed
   const [hiddenDepts, setHiddenDepts] = useState<Set<string>>(new Set());
 
   // Modal state
@@ -95,43 +95,6 @@ const CourseTree: React.FC<CourseTreeProps> = ({ poid }) => {
     }
     setHiddenDepts(newDepts);
   };
-
-  useEffect(() => {
-    let canceled = false;
-
-    async function loadTree() {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetch(`http://localhost:8000/api/course_tree/${encodeURIComponent(poid)}`);
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(text || 'Failed to fetch course tree');
-        }
-
-        const data = await response.json();
-        if (!canceled) {
-          setGraph(data as GraphResponse);
-        }
-      } catch (err) {
-        if (!canceled) {
-          setError(err instanceof Error ? err.message : 'Unknown error');
-          setGraph(null);
-        }
-      } finally {
-        if (!canceled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadTree();
-
-    return () => {
-      canceled = true;
-    };
-  }, [poid]);
 
   const allDepts = useMemo(() => {
     if (!graph) return [];
