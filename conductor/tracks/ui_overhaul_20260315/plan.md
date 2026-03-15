@@ -6,10 +6,10 @@
 - [x] Task: Frontend - Glassmorphism UI Components 91e6a75
     - [x] Create `GlassPanel.tsx` and `GlassButton.tsx` primitive components with backdrop-blur and transparency.
     - [x] Define global CSS variables for glassmorphism colors in `index.css`.
-- [ ] Task: Frontend - Sidebar Navigation
-    - [ ] Write failing test for `Sidebar.tsx` ensuring it switches active views.
-    - [ ] Implement `Sidebar.tsx` with icons for Tree, GE, and Schedule.
-    - [ ] Verify test passes and layout is fixed-width on desktop.
+- [x] Task: Frontend - Sidebar Navigation 6e53f4d
+    - [x] Write failing test for `Sidebar.tsx` ensuring it switches active views.
+    - [x] Implement `Sidebar.tsx` with icons for Tree, GE, and Schedule.
+    - [x] Verify test passes and layout is fixed-width on desktop.
 - [ ] Task: Frontend - Dashboard Layout Integration
     - [ ] Write failing test for `DashboardLayout.tsx` ensuring it renders children and sidebar correctly.
     - [ ] Refactor `App.tsx` to use `DashboardLayout`.
