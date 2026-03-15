@@ -31,9 +31,34 @@ export const PlannerProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [plannedCourses, setPlannedCourses] = useState<string[]>([]);
 
   // Cache State
-  const [treeCache, setTreeCache] = useState<Record<string, any>>({});
-  const [electiveCache, setElectiveCache] = useState<Record<string, any>>({});
+  const [treeCache, setTreeCache] = useState<Record<string, any>>(() => {
+    try {
+      const saved = localStorage.getItem('planner_treeCache');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+  
+  const [electiveCache, setElectiveCache] = useState<Record<string, any>>(() => {
+    try {
+      const saved = localStorage.getItem('planner_electiveCache');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+  
   const [loadingState, setLoadingState] = useState({ tree: false, electives: false });
+
+  // Persist to localStorage
+  useEffect(() => {
+    localStorage.setItem('planner_treeCache', JSON.stringify(treeCache));
+  }, [treeCache]);
+
+  useEffect(() => {
+    localStorage.setItem('planner_electiveCache', JSON.stringify(electiveCache));
+  }, [electiveCache]);
 
   const loadMajorData = useCallback(async (poid: string) => {
     if (!poid) return;

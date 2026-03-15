@@ -64,4 +64,49 @@ describe('PlannerContext Caching', () => {
     // Fetch should NOT have been called because data is cached
     expect(fetchSpy).toHaveBeenCalledTimes(0);
   });
+
+  it('hydrates and persists to localStorage', async () => {
+    const mockTreeCache = { '13772': { nodes: [{ data: { id: 'test' } }], edges: [] } };
+    localStorage.setItem('planner_treeCache', JSON.stringify(mockTreeCache));
+
+    const fetchSpy = vi.spyOn(global, 'fetch').mockImplementation((url) => {
+      if (url.includes('/api/course_tree/')) {
+        return Promise.resolve({ ok: true, json: async () => ({ nodes: [{ data: { id: 'new-test' } }], edges: [] }) } as Response);
+      }
+      if (url.includes('/api/electives/')) {
+        return Promise.resolve({ ok: true, json: async () => ({ data: [] }) } as Response);
+      }
+      return Promise.reject(new Error('not mocked'));
+    });
+
+    const TestPersistenceComponent = () => {
+      const { treeCache, loadMajorData } = usePlanner();
+      return (
+        <div>
+          <div data-testid="hydrated-data">{treeCache['13772'] ? 'Hydrated' : 'Empty'}</div>
+          <button onClick={() => loadMajorData('999')}>
+            Update Cache
+          </button>
+        </div>
+      );
+    };
+
+    render(
+      <PlannerProvider>
+        <TestPersistenceComponent />
+      </PlannerProvider>
+    );
+
+    // Should hydrate on mount
+    expect(screen.getByTestId('hydrated-data')).toHaveTextContent('Hydrated');
+
+    // Update state to trigger persist by loading a new major
+    fireEvent.click(screen.getByText('Update Cache'));
+
+    // Wait for the effect to run and fetch to complete
+    await waitFor(() => {
+      const savedCache = JSON.parse(localStorage.getItem('planner_treeCache') || '{}');
+      expect(savedCache['999']).toBeDefined();
+    });
+  });
 });
