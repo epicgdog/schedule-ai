@@ -2,6 +2,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import CourseTree from '../CourseTree';
 import React from 'react';
+import { PlannerProvider } from '../../context/PlannerContext';
 
 // Mock cytoscape since it needs a DOM element and is complex to test in jsdom
 vi.mock('cytoscape', () => {
@@ -42,7 +43,11 @@ describe('CourseTree', () => {
       json: async () => mockGraph,
     } as Response);
 
-    render(<CourseTree poid="13772" />);
+    render(
+      <PlannerProvider>
+        <CourseTree poid="13772" />
+      </PlannerProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByText(/Computer Science, BS/i)).toBeInTheDocument();
@@ -57,7 +62,11 @@ describe('CourseTree', () => {
       json: async () => mockGraph,
     } as Response);
 
-    render(<CourseTree poid="13772" />);
+    render(
+      <PlannerProvider>
+        <CourseTree poid="13772" />
+      </PlannerProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByText('CS')).toBeInTheDocument();
@@ -68,7 +77,7 @@ describe('CourseTree', () => {
     expect(csButton).not.toHaveClass('bg-transparent');
 
     fireEvent.click(csButton);
-    // Should now be hidden/deactivated (the component adds 'bg-transparent' when hidden)
+    // Should now be hidden/deactivated
     expect(csButton).toHaveClass('bg-transparent');
   });
 });
