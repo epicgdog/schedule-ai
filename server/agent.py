@@ -281,7 +281,12 @@ def invoke(transcript_str: pd.DataFrame) -> dict:
                 MajorCourse.append(courseObj)
         
         ge_course_dih = ge_processor_pipeline(GECourse, major, conn)
-        gerard_ai_response_or_something = {}
+        # Simply return the list of major course codes for now so the frontend can highlight them
+        gerard_ai_response_or_something = {
+            "Completed": {
+                "Courses": [c.code for c in MajorCourse]
+            }
+        }
         finalFrontend = {"Name": "Mansager Bathtub", "Major": major, "GE_Courses": ge_course_dih, "Major_Courses": gerard_ai_response_or_something}
 
     return finalFrontend
