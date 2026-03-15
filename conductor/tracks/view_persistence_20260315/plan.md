@@ -17,9 +17,9 @@
 - [ ] Task: Frontend - CSS-based Tab Switching
     - [ ] Refactor `App.tsx` to render all tab components simultaneously.
     - [ ] Use Tailwind `hidden` class or `display: none` based on `activeTab`.
-- [ ] Task: Frontend - Component Refactor for Context Data
-    - [ ] Update `CourseTree.tsx` to consume data from `PlannerContext` instead of fetching internally.
-    - [ ] Update `ElectiveList.tsx` to consume data from `PlannerContext`.
+- [x] Task: Frontend - Component Refactor for Context Data 4ee93a6
+    - [x] Update `CourseTree.tsx` to consume data from `PlannerContext` instead of fetching internally.
+    - [x] Update `ElectiveList.tsx` to consume data from `PlannerContext`.
 - [ ] Task: Conductor - User Manual Verification 'Persistent Dashboard Layout' (Protocol in workflow.md)
 
 ## Phase 3: Reactive Progress Visualization
