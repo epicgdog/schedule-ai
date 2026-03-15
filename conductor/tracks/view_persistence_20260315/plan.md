@@ -11,7 +11,7 @@
     - [x] Implement hydration logic to load cache on startup.
 - [x] Task: Conductor - User Manual Verification 'Context-Based Caching & Persistence' (Protocol in workflow.md) f221557
 
-## Phase 2: Persistent Dashboard Layout
+## Phase 2: Persistent Dashboard Layout [checkpoint: c5ab48e]
 *Objective: Prevent component unmounting to preserve UI state (zoom/pan).*
 
 - [x] Task: Frontend - CSS-based Tab Switching d9d2057
@@ -20,7 +20,7 @@
 - [x] Task: Frontend - Component Refactor for Context Data 4ee93a6
     - [x] Update `CourseTree.tsx` to consume data from `PlannerContext` instead of fetching internally.
     - [x] Update `ElectiveList.tsx` to consume data from `PlannerContext`.
-- [ ] Task: Conductor - User Manual Verification 'Persistent Dashboard Layout' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Persistent Dashboard Layout' (Protocol in workflow.md) c5ab48e
 
 ## Phase 3: Reactive Progress Visualization
 *Objective: Ensure the tree and elective lists react instantly to transcript uploads.*
