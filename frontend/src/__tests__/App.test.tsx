@@ -66,6 +66,6 @@ describe('App', () => {
     fireEvent.click(screen.getByText(/Switch to GE/i));
     
     expect(screen.getByTestId('tab-indicator')).toHaveTextContent('ge');
-    expect(screen.getByText(/General Education Progress/i)).toBeInTheDocument();
+    expect(screen.getByText(/GE Progress Tracker/i)).toBeInTheDocument();
   });
 });
