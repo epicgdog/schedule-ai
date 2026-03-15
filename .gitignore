@@ -17,3 +17,6 @@ requirements-linux.txt
 output.md
 debug_outputs/
 .agent/
+.gemini/
+GEMINI.md
+implementation_plan.md

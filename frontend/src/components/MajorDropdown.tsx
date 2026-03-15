@@ -1,40 +1,54 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
-const majors = [
-  "Select a Major",
-  "Computer Science",
-  "Software Engineering",
-  "Computer Engineering",
-  "Data Science",
-  "Electrical Engineering",
-  "Mechanical Engineering",
-  "Civil Engineering",
-  "Chemical Engineering",
-  "Bioengineering",
-  "Business Administration",
-  "Economics",
-  "Psychology",
-  "Art",
-  "Music"
-];
-
-interface MajorDropdownProps {
-  major: string;
-  setMajor: (major: string) => void;
+interface Program {
+  poid: string;
+  program_name: string;
 }
 
-const MajorDropdown: React.FC<MajorDropdownProps> = ({ major, setMajor }) => {
+interface MajorDropdownProps {
+  selectedPoid: string;
+  onSelect: (poid: string) => void;
+}
+
+const MajorDropdown: React.FC<MajorDropdownProps> = ({ selectedPoid, onSelect }) => {
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchPrograms() {
+      try {
+        const response = await fetch('http://localhost:8000/api/programs');
+        if (!response.ok) throw new Error('Failed to fetch programs');
+        const data = await response.json();
+        setPrograms(data.data || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchPrograms();
+  }, []);
+
+  if (loading) return <div className="text-gray-400 mb-6">Loading majors...</div>;
+  if (error) return <div className="text-red-400 mb-6">Error: {error}</div>;
+
   return (
     <div className="mb-6">
-      <label htmlFor="major-select" className="block mb-3 font-medium">Select Your Major</label>
+      <label htmlFor="major-select" className="block mb-3 font-medium text-white">Select Your Major</label>
       <select 
         id="major-select" 
         className="w-full p-3 bg-gray-800 border border-gray-600 rounded text-white text-base focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent" 
-        value={major} 
-        onChange={(e) => setMajor(e.target.value)}
+        value={selectedPoid} 
+        onChange={(e) => onSelect(e.target.value)}
       >
-        {majors.map((majorOption, index) => (
-          <option key={index} value={majorOption === "Select a Major" ? "" : majorOption} className="bg-gray-800 text-white">{majorOption}</option>
+        <option value="" className="bg-gray-800 text-white">Select a Major</option>
+        {programs.map((prog) => (
+          <option key={prog.poid} value={prog.poid} className="bg-gray-800 text-white">
+            {prog.program_name}
+          </option>
         ))}
       </select>
     </div>

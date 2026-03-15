@@ -136,14 +136,50 @@ def load_courses(force: bool = False) -> None:
     logger.info("Courses: done")
 
 
+def load_catalog(force: bool = False) -> None:
+    """Load catalog course details (name, prereqs, GE area, etc.) from COIDs."""
+    from db import get_engine, Base, Course
+    from course_detail_scraper import scrape_and_store
+    from sqlalchemy.orm import Session
+
+    engine = get_engine()
+    if force:
+        with Session(engine) as session:
+            session.execute(Course.__table__.delete())
+            session.commit()
+
+    scrape_and_store()
+    logger.info("Catalog: done")
+
+
+def load_program_requirements(force: bool = False) -> None:
+    """Extract structured program requirements via Groq LLM."""
+    from program_requirements_scraper import scrape_and_store as prog_scrape
+    from db import get_engine, ProgramRequiredCourse, ProgramElectiveGroup
+    from sqlalchemy import text
+
+    if force:
+        engine = get_engine()
+        with engine.connect() as conn:
+            conn.execute(text("DELETE FROM program_required_courses"))
+            conn.execute(text("DELETE FROM program_elective_groups"))
+            conn.execute(text("UPDATE programs SET requirements_json = NULL"))
+            conn.commit()
+
+    prog_scrape()
+    logger.info("Program Requirements: done")
+
+
 # ── Registry ─────────────────────────────────────────────────────
 
 LOADERS = {
-    "ge":         ("GE Courses",         load_ge),
-    "ap":         ("AP Articulation",     load_ap),
-    "exceptions": ("Major GE Exceptions", load_major_exceptions),
-    "majors":     ("Major Requirements",  load_majors),
-    "courses":    ("Current Courses",     load_courses),
+    "ge":           ("GE Courses",            load_ge),
+    "ap":           ("AP Articulation",        load_ap),
+    "exceptions":   ("Major GE Exceptions",    load_major_exceptions),
+    "majors":       ("Major Requirements",     load_majors),
+    "courses":      ("Current Courses",        load_courses),
+    "catalog":      ("Catalog Courses",        load_catalog),
+    "programs_req": ("Program Requirements",   load_program_requirements),
 }
 
 

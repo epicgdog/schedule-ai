@@ -78,6 +78,6 @@ describe('CourseTree', () => {
 
     fireEvent.click(csButton);
     // Should now be hidden/deactivated
-    expect(csButton).toHaveClass('bg-transparent');
+    expect(csButton).toHaveClass('bg-transparent', 'text-gray-600');
   });
 });

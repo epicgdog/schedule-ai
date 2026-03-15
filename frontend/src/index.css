@@ -26,7 +26,12 @@
   }
 
   .glass-card {
-    @apply glass-panel rounded-xl overflow-hidden transition-all duration-300;
+    background: var(--color-glass-bg);
+    backdrop-filter: var(--backdrop-blur-glass);
+    -webkit-backdrop-filter: var(--backdrop-blur-glass);
+    border: 1px solid var(--color-glass-border);
+    box-shadow: var(--shadow-glass);
+    @apply rounded-xl overflow-hidden transition-all duration-300;
   }
 
   .glass-button {

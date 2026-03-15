@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import CourseInput from './CourseInput';
 import TimeSelector from './TimeSelector';
 import GeTracker from './GeTracker';
+import CourseTree from './CourseTree';
 
 interface GeAnalysisData {
   Name: string;
@@ -18,6 +19,7 @@ const initialState = Object.fromEntries(DAYS.map((day) => [day, 0n])) as Record<
 const ScheduleForm: React.FC = () => {
   const [step, setStep] = useState(1);
   const [major, setMajor] = useState('');
+  const [poid, setPoid] = useState('13772');
   const [geData, setGeData] = useState<GeAnalysisData | null>(null);
   const [selectedTimes, setSelectedTimes] = useState<Record<Day, bigint>>(initialState);
   const [activeTab, setActiveTab] = useState<'schedule' | 'ge-tracker' | 'major-tree' | 'more'>('schedule');
@@ -34,6 +36,11 @@ const ScheduleForm: React.FC = () => {
     console.log("Analysis complete:", data);
     setGeData(data);
     if (data.Major) setMajor(data.Major);
+
+    const maybePoid = (data as { POID?: string | number }).POID;
+    if (maybePoid !== undefined && maybePoid !== null && String(maybePoid).trim()) {
+      setPoid(String(maybePoid));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -158,13 +165,18 @@ const ScheduleForm: React.FC = () => {
                 )}
 
                 {activeTab === 'major-tree' && (
-                  <div className="flex flex-col items-center justify-center py-20 text-gray-400 border border-dashed border-gray-700 rounded-lg">
-                    <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <title>Tree Icon</title>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                    </svg>
-                    <h3 className="text-xl font-medium mb-2">Major Tree</h3>
-                    <p>Visual prerequisite tree coming soon...</p>
+                  <div className="p-4 border border-gray-700 rounded-lg bg-gray-900/60">
+                    <div className="mb-4 flex items-center gap-3">
+                      <label htmlFor="poid-input" className="text-sm text-gray-300">Program POID</label>
+                      <input
+                        id="poid-input"
+                        value={poid}
+                        onChange={(e) => setPoid(e.target.value)}
+                        placeholder="e.g. 13772"
+                        className="w-40 px-3 py-1.5 bg-gray-800 border border-gray-600 rounded text-white text-sm"
+                      />
+                    </div>
+                    <CourseTree poid={poid} />
                   </div>
                 )}
 
