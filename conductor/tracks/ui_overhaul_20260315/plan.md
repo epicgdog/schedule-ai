@@ -31,10 +31,10 @@
 ## Phase 3: Component Overhaul (Tree & GE)
 *Objective: Update primary views with new styles and completion status logic.*
 
-- [ ] Task: Frontend - Enhanced CourseTree
-    - [ ] Update `CourseTree.tsx` to accept `courseHistory` and highlight completed nodes.
-    - [ ] Apply glassmorphism styles to the floating filter panel.
-    - [ ] Verify node highlighting logic via unit tests.
+- [x] Task: Frontend - Enhanced CourseTree 602c6ad
+    - [x] Update `CourseTree.tsx` to accept `courseHistory` and highlight completed nodes.
+    - [x] Apply glassmorphism styles to the floating filter panel.
+    - [x] Verify node highlighting logic via unit tests.
 - [ ] Task: Frontend - Enhanced GeTracker
     - [ ] Refactor `GeTracker.tsx` to use the new glassmorphism panels.
     - [ ] Ensure progress bars and status badges are updated based on global `courseHistory`.
