@@ -25,9 +25,9 @@
 ## Phase 3: Reactive Progress Visualization
 *Objective: Ensure the tree and elective lists react instantly to transcript uploads.*
 
-- [ ] Task: Frontend - Reactive Node Styling (Course Tree)
-    - [ ] Update `CourseTree.tsx` to watch `courseHistory` and dynamically calculate node states (Completed, Available, Locked).
-    - [ ] Refine visual styles in Cytoscape for "Completed", "Available" (need to take), and "Locked" nodes without re-initializing the graph.
+- [x] Task: Frontend - Reactive Node Styling (Course Tree) df23416
+    - [x] Update `CourseTree.tsx` to watch `courseHistory` and dynamically calculate node states (Completed, Available, Locked).
+    - [x] Refine visual styles in Cytoscape for "Completed", "Available" (need to take), and "Locked" nodes without re-initializing the graph.
 - [ ] Task: Frontend - Reactive Elective Tracking
     - [ ] Update `ElectiveList.tsx` to evaluate `courseHistory` against available choices.
     - [ ] Add visual indicators for completed electives (e.g., checked off, green text).
