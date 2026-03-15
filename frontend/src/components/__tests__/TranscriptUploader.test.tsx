@@ -18,10 +18,15 @@ describe('TranscriptUploader', () => {
       POID: '13772'
     };
 
-    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ status: 'success', text: JSON.stringify(mockData) }),
-    } as Response);
+    vi.spyOn(global, 'fetch').mockImplementation((url) => {
+      if (url.includes('/api/generate_classes')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ status: 'success', text: JSON.stringify(mockData) }),
+        } as Response);
+      }
+      return Promise.resolve({ ok: true, json: async () => ({}) } as Response);
+    });
 
     render(
       <PlannerProvider>
