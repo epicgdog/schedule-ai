@@ -13,16 +13,17 @@ Schedule AI is a specialized tool designed for San Jose State University (SJSU) 
 - **Academic Success:** Help students select top-rated professors to improve their learning experience and grades.
 
 ## UI/UX Principles
-- **Modern Interface:** Provide a more user-friendly and intuitive experience than the text-heavy catalogs provided by SJSU.
+- **Modern Dashboard:** A unified, sidebar-driven interface that centralizes all planning tools.
 - **Visual-First:** Emphasize visual representation of course sequences and prerequisites to reduce cognitive load.
+- **Transcript Integration:** Automatically highlight completed courses and track progress by uploading SJSU transcripts.
 - **Accessibility:** Ensure that all features are easily accessible and clearly labeled for a diverse student body.
 
 ## Key Features
-- **Prerequisite Visualization:** Render directed graphs of program requirements using Cytoscape.js and the Dagre layout.
+- **Prerequisite Visualization:** Render directed graphs of program requirements using Cytoscape.js with automatic completion highlighting.
 - **Professor Ratings:** Integrate instructor ratings and difficulty scores (RateMyProfessors) into the schedule generation process.
 - **Schedule Generation:** Process uploaded schedules (Excel/HTML) and find open class sections based on user-defined time constraints.
-- **GE Tracker:** Automate the finding and tracking of General Education (GE) requirements and major-specific waivers.
-- **Time Blocking:** Support for extracurriculars and work-life balance by allowing users to block out specific times in their schedule.
+- **GE Tracker:** Automated tracking of General Education requirements synced with student history.
+- **Course Detail Modals:** High-fidelity overlays providing deep-dives into course descriptions and units.
 
 ## Success Metrics
 - Reduction in time spent by students on semesterly course planning.

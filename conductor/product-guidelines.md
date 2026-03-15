@@ -2,6 +2,7 @@
 
 ## Branding & Visual Identity
 - **Color Palette:** Modern High-Contrast. Use a clean, professional palette with high-contrast colors (e.g., Deep Navy, Slate Gray, Vibrant Gold) to ensure readability and accessibility across all devices.
+- **Glassmorphism Aesthetic:** Utilize semi-transparent backgrounds with `backdrop-blur` for panels and interactive elements to create depth and focus.
 - **Typography:** Sans-serif fonts (e.g., Inter, Roboto) for a modern, clean look that prioritizes legibility in complex schedules.
 
 ## Voice & Tone
