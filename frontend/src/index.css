@@ -1,1 +1,37 @@
 @import "tailwindcss";
+
+@theme {
+  --color-glass-bg: rgba(17, 24, 39, 0.7);
+  --color-glass-border: rgba(255, 255, 255, 0.1);
+  --color-glass-highlight: rgba(255, 255, 255, 0.05);
+  
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  
+  --backdrop-blur-glass: blur(12px);
+}
+
+@layer base {
+  body {
+    @apply bg-gray-950 text-gray-100 antialiased;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    background: var(--color-glass-bg);
+    backdrop-filter: var(--backdrop-blur-glass);
+    -webkit-backdrop-filter: var(--backdrop-blur-glass);
+    border: 1px solid var(--color-glass-border);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .glass-card {
+    @apply glass-panel rounded-xl overflow-hidden transition-all duration-300;
+  }
+
+  .glass-button {
+    @apply relative overflow-hidden px-4 py-2 rounded-lg font-medium transition-all duration-200 
+           border border-white/10 bg-white/5 hover:bg-white/10 active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
+  }
+}
