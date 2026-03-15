@@ -29,10 +29,10 @@
 ## Phase 3: Integration and Visualization
 *Objective: Connect the frontend components and enhance the course tree visualization.*
 
-- [ ] Task: Frontend - Global State Management
-    - [ ] Write failing test for `App.tsx` ensuring `poid` state updates correctly.
-    - [ ] Update `App.tsx` to manage selected major and pass it to `CourseTree`.
-    - [ ] Verify test passes.
+- [x] Task: Frontend - Global State Management b6f40a9
+    - [x] Write failing test for `App.tsx` ensuring `poid` state updates correctly.
+    - [x] Update `App.tsx` to manage selected major and pass it to `CourseTree`.
+    - [x] Verify test passes.
 - [ ] Task: Frontend - Course Tree Department Filtering
     - [ ] Write failing test for department filtering in `CourseTree.tsx`.
     - [ ] Implement multi-select filter for departments in `CourseTree.tsx`.
