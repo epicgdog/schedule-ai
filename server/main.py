@@ -1,14 +1,36 @@
 import logging
+import os
+import sys
+from pathlib import Path
+
+# Add project root and subdirectories to sys.path so imports work when running from root
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(PROJECT_ROOT / "server"))
+sys.path.insert(0, str(PROJECT_ROOT / "sjsu-data-retrival"))
+
+from dotenv import load_dotenv
+load_dotenv(PROJECT_ROOT / ".env")
+
 import uvicorn
 import fitz
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from sqlalchemy import create_engine, text
 
 import json
 import agent
-from modules import get_instructor_rating, get_open_classes_for, get_ge_areas, get_courses_by_ge, get_open_ge_classes, get_major_ge_exceptions
-
+from course_tree import build_course_tree
+from db import get_engine
+from modules import (
+    get_instructor_rating,
+    get_open_classes_for,
+    get_ge_areas,
+    get_courses_by_ge,
+    get_open_ge_classes,
+    get_major_ge_exceptions,
+)
 
 
 logging.basicConfig(
@@ -17,6 +39,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
+
 
 app = FastAPI(
     title="Schedule AI API",
@@ -65,20 +88,24 @@ def get_time_from_str(s: str):
         # pm time
 
 
-
 import pandas as pd
-import xlrd
+# import xlrd
 import io
+
 
 @app.post("/api/generate_classes")
 async def generate_possible_classes(file: UploadFile = File(...)):
     # Validate Excel content type
-    if file.content_type not in ["application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]:
-        return {"error": "Invalid file type. Please upload an Excel file (.xls or .xlsx)."}
+    if file.content_type not in [
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ]:
+        return {
+            "error": "Invalid file type. Please upload an Excel file (.xls or .xlsx)."
+        }
     logging.info(file.filename)
     # Read file bytes
     contents = await file.read()
-    
 
     # Read file content
     # User confirmed all files are HTML ("fake .xls"), so we prioritize read_html.
@@ -86,21 +113,23 @@ async def generate_possible_classes(file: UploadFile = File(...)):
     try:
         # Try parsing as HTML table first
         # default flavor='bs4' uses lxml or html5lib.
-        dfs = pd.read_html(io.BytesIO(contents), flavor='bs4', header=None)
+        dfs = pd.read_html(io.BytesIO(contents), flavor="bs4", header=None)
         if not dfs:
-             # If read_html runs but finds no tables, try excel just in case
-             raise ValueError("No tables found in HTML")
-        df = dfs # agent.invoke handles list of DataFrames
+            # If read_html runs but finds no tables, try excel just in case
+            raise ValueError("No tables found in HTML")
+        df = dfs  # agent.invoke handles list of DataFrames
     except Exception as e:
         html_error = e
         # Fallback: Try standard Excel parsing (xlrd) if HTML parsing failed
         try:
-            df = pd.read_excel(io.BytesIO(contents), engine='xlrd')
+            df = pd.read_excel(io.BytesIO(contents), engine="xlrd")
         except Exception as excel_e:
-            return {"error": f"Error reading file. \nHTML Parse Error: {html_error} \nExcel Parse Error: {excel_e}"}
-    
+            return {
+                "error": f"Error reading file. \nHTML Parse Error: {html_error} \nExcel Parse Error: {excel_e}"
+            }
+
     msg = agent.invoke(df)
-    
+
     return {"text": msg}
 
 
@@ -215,11 +244,86 @@ async def get_open_ge_classes_endpoint(area: str):
     return {"status": "success", "classes": classes}
 
 
-# @app.get("/api/major_exceptions/{major}")
-# async def get_major_exceptions_endpoint(major: str):
-#     """Get GE area exceptions/waivers for a given major."""
-#     exceptions = get_major_ge_exceptions(major)
-#     return {"status": "success", "exceptions": exceptions}
+@app.get("/api/programs")
+async def get_all_programs():
+    """Get all available programs (majors)."""
+    try:
+        engine = get_engine()
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text("SELECT poid, program_name FROM programs ORDER BY program_name")
+            ).fetchall()
+            programs = [{"poid": r[0], "program_name": r[1]} for r in rows]
+            return {"status": "success", "data": programs}
+    except Exception as exc:
+        logger.exception("Failed to fetch programs")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch programs: {exc}")
+
+
+@app.get("/api/course_tree/{poid}")
+async def get_course_tree(poid: str):
+    """Get Cytoscape graph data for a program's required-course prerequisite tree."""
+    try:
+        engine = get_engine()
+        return build_course_tree(engine, poid)
+    except Exception as exc:
+        logger.exception("Failed to build course tree for poid=%s", poid)
+        raise HTTPException(
+            status_code=500, detail=f"Failed to build course tree: {exc}"
+        )
+
+
+@app.get("/api/electives/{poid}")
+async def get_program_electives(poid: str):
+    """Get all elective groups for a specific program."""
+    try:
+        engine = get_engine()
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text("SELECT heading, instructions, choices_json FROM program_elective_groups WHERE poid = :p"),
+                {"p": poid}
+            ).fetchall()
+            electives = [
+                {
+                    "heading": r[0],
+                    "instructions": r[1],
+                    "choices": json.loads(r[2]) if r[2] else []
+                }
+                for r in rows
+            ]
+            return {"status": "success", "data": electives}
+    except Exception as exc:
+        logger.exception("Failed to fetch electives for poid=%s", poid)
+        raise HTTPException(status_code=500, detail=f"Failed to fetch electives: {exc}")
+
+
+@app.get("/api/course/{course_code}")
+async def get_course_details(course_code: str):
+    """Get details for a specific course by its course_code."""
+    try:
+        engine = get_engine()
+        with engine.connect() as conn:
+            row = conn.execute(
+                text("SELECT course_name, description, units FROM courses WHERE course_code = :c LIMIT 1"),
+                {"c": course_code}
+            ).fetchone()
+            
+            if not row:
+                raise HTTPException(status_code=404, detail=f"Course '{course_code}' not found")
+                
+            return {
+                "status": "success", 
+                "data": {
+                    "course_name": row[0],
+                    "description": row[1],
+                    "units": row[2]
+                }
+            }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to fetch details for course=%s", course_code)
+        raise HTTPException(status_code=500, detail=f"Internal server error: {exc}")
 
 
 if __name__ == "__main__":
