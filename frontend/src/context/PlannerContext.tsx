@@ -27,7 +27,14 @@ const PlannerContext = createContext<PlannerContextType | undefined>(undefined);
 
 export const PlannerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [selectedPoid, setSelectedPoid] = useState<string>('13772');
-  const [courseHistory, setCourseHistory] = useState<GeAnalysisData | null>(null);
+  const [courseHistory, setCourseHistory] = useState<GeAnalysisData | null>(() => {
+    try {
+      const saved = localStorage.getItem('planner_courseHistory');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
   const [plannedCourses, setPlannedCourses] = useState<string[]>([]);
 
   // Cache State
@@ -59,6 +66,14 @@ export const PlannerProvider: React.FC<{ children: ReactNode }> = ({ children })
   useEffect(() => {
     localStorage.setItem('planner_electiveCache', JSON.stringify(electiveCache));
   }, [electiveCache]);
+
+  useEffect(() => {
+    if (courseHistory) {
+      localStorage.setItem('planner_courseHistory', JSON.stringify(courseHistory));
+    } else {
+      localStorage.removeItem('planner_courseHistory');
+    }
+  }, [courseHistory]);
 
   const loadMajorData = useCallback(async (poid: string) => {
     if (!poid) return;
