@@ -63,9 +63,19 @@ describe('App', () => {
     
     expect(screen.getByTestId('tab-indicator')).toHaveTextContent('tree');
     
+    // Check that GE Progress is in the document but visually hidden
+    const geSection = screen.getByText(/GE Progress Tracker/i).closest('section');
+    expect(geSection).toHaveClass('hidden');
+
     fireEvent.click(screen.getByText(/Switch to GE/i));
     
     expect(screen.getByTestId('tab-indicator')).toHaveTextContent('ge');
-    expect(screen.getByText(/GE Progress Tracker/i)).toBeInTheDocument();
+    
+    // Now GE should NOT be hidden
+    expect(geSection).not.toHaveClass('hidden');
+    
+    // And Tree should be hidden
+    const treeSection = screen.getByTestId('course-tree').closest('div.space-y-8')?.parentElement;
+    expect(treeSection).toHaveClass('hidden');
   });
 });
