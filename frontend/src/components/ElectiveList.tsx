@@ -28,7 +28,7 @@ const ElectiveCourseItem: React.FC<{ code: string; isCompleted: boolean }> = ({ 
     if (!expanded && !details) {
       setLoading(true);
       try {
-        const response = await fetch(`http://localhost:8000/api/course/${encodeURIComponent(code)}`);
+        const response = await fetch(`/api/course/${encodeURIComponent(code)}`);
         if (response.ok) {
           const data = await response.json();
           setDetails(data.data);

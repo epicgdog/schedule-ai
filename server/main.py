@@ -10,6 +10,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "server"))
 sys.path.insert(0, str(PROJECT_ROOT / "sjsu-data-retrival"))
 
 from dotenv import load_dotenv
+
 load_dotenv(PROJECT_ROOT / ".env")
 
 import uvicorn
@@ -18,11 +19,12 @@ from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy import create_engine, text
+from sqlalchemy.orm import Session
 
 import json
 import agent
 from course_tree import build_course_tree
-from db import get_engine
+from db import get_engine, ProgramTree
 from modules import (
     get_instructor_rating,
     get_open_classes_for,
@@ -47,10 +49,16 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Configure CORS for React dev server
+# Configure CORS for React dev server and Docker nginx frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:80",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -89,6 +97,7 @@ def get_time_from_str(s: str):
 
 
 import pandas as pd
+
 # import xlrd
 import io
 
@@ -265,6 +274,18 @@ async def get_course_tree(poid: str):
     """Get Cytoscape graph data for a program's required-course prerequisite tree."""
     try:
         engine = get_engine()
+
+        with Session(engine) as session:
+            cached = session.get(ProgramTree, poid)
+            if cached:
+                tree_data = json.loads(cached.tree_json)
+                return {
+                    "nodes": tree_data.get("nodes", []),
+                    "edges": tree_data.get("edges", []),
+                    "program_name": tree_data.get("program_name"),
+                }
+
+        logger.info(f"No cached tree for poid={poid}, building live")
         return build_course_tree(engine, poid)
     except Exception as exc:
         logger.exception("Failed to build course tree for poid=%s", poid)
@@ -278,16 +299,25 @@ async def get_program_electives(poid: str):
     """Get all elective groups for a specific program."""
     try:
         engine = get_engine()
+
+        with Session(engine) as session:
+            cached = session.get(ProgramTree, poid)
+            if cached:
+                tree_data = json.loads(cached.tree_json)
+                return {"status": "success", "data": tree_data.get("electives", [])}
+
         with engine.connect() as conn:
             rows = conn.execute(
-                text("SELECT heading, instructions, choices_json FROM program_elective_groups WHERE poid = :p"),
-                {"p": poid}
+                text(
+                    "SELECT heading, instructions, choices_json FROM program_elective_groups WHERE poid = :p"
+                ),
+                {"p": poid},
             ).fetchall()
             electives = [
                 {
                     "heading": r[0],
                     "instructions": r[1],
-                    "choices": json.loads(r[2]) if r[2] else []
+                    "choices": json.loads(r[2]) if r[2] else [],
                 }
                 for r in rows
             ]
@@ -304,20 +334,20 @@ async def get_course_details(course_code: str):
         engine = get_engine()
         with engine.connect() as conn:
             row = conn.execute(
-                text("SELECT course_name, description, units FROM courses WHERE course_code = :c LIMIT 1"),
-                {"c": course_code}
+                text(
+                    "SELECT course_name, description, units FROM courses WHERE course_code = :c LIMIT 1"
+                ),
+                {"c": course_code},
             ).fetchone()
-            
+
             if not row:
-                raise HTTPException(status_code=404, detail=f"Course '{course_code}' not found")
-                
+                raise HTTPException(
+                    status_code=404, detail=f"Course '{course_code}' not found"
+                )
+
             return {
-                "status": "success", 
-                "data": {
-                    "course_name": row[0],
-                    "description": row[1],
-                    "units": row[2]
-                }
+                "status": "success",
+                "data": {"course_name": row[0], "description": row[1], "units": row[2]},
             }
     except HTTPException:
         raise

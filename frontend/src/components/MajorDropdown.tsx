@@ -18,7 +18,7 @@ const MajorDropdown: React.FC<MajorDropdownProps> = ({ selectedPoid, onSelect })
   useEffect(() => {
     async function fetchPrograms() {
       try {
-        const response = await fetch('http://localhost:8000/api/programs');
+        const response = await fetch('/api/programs');
         if (!response.ok) throw new Error('Failed to fetch programs');
         const data = await response.json();
         setPrograms(data.data || []);

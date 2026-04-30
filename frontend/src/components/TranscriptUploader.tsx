@@ -32,7 +32,7 @@ const TranscriptUploader: React.FC = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('http://localhost:8000/api/generate_classes', {
+      const response = await fetch('/api/generate_classes', {
         method: 'POST',
         body: formData,
       });

@@ -70,7 +70,9 @@ def get_engine():
         except ImportError:
             logger.warning("libsql not installed — falling back to local SQLite")
 
-    db_path = str(PROJECT_ROOT / os.getenv("DATABASE", "sjsu-data-retrival/sjsu_courses.db"))
+    db_path = str(
+        PROJECT_ROOT / os.getenv("DATABASE", "sjsu-data-retrival/sjsu_courses.db")
+    )
     logger.info("Using local SQLite: %s", db_path)
     return create_engine(f"sqlite:///{db_path}")
 
@@ -177,7 +179,25 @@ class ProgramElectiveGroup(Base):
     poid = Column(String, nullable=False)
     heading = Column(String, nullable=False)
     instructions = Column(String)
-    choices_json = Column(Text)  # JSON array of course codes, e.g. '["CS 116A","CS 116B"]'
+    choices_json = Column(
+        Text
+    )  # JSON array of course codes, e.g. '["CS 116A","CS 116B"]'
 
     def __repr__(self) -> str:
         return f"<ElectiveGroup poid={self.poid!r} heading={self.heading!r}>"
+
+
+class ProgramTree(Base):
+    """Pre-computed course tree + electives JSON for a program.
+
+    Generated once during build_db.py and served directly from the DB.
+    """
+
+    __tablename__ = "program_trees"
+
+    poid = Column(String, primary_key=True)
+    tree_json = Column(Text, nullable=False)
+    generated_at = Column(String, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<ProgramTree poid={self.poid!r}>"

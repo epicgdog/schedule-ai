@@ -29,7 +29,7 @@ const CourseDetailModal: React.FC<CourseDetailModalProps> = ({
         setLoading(true);
         setError(null);
         try {
-          const response = await fetch(`http://localhost:8000/api/course/${encodeURIComponent(courseCode)}`);
+          const response = await fetch(`/api/course/${encodeURIComponent(courseCode)}`);
           if (!response.ok) throw new Error('Course not found');
           const data = await response.json();
           setDetails(data.data);

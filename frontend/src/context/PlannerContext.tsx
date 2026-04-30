@@ -92,7 +92,7 @@ export const PlannerProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     if (needsTree) {
       promises.push(
-        fetch(`http://localhost:8000/api/course_tree/${encodeURIComponent(poid)}`)
+        fetch(`/api/course_tree/${encodeURIComponent(poid)}`)
           .then(res => {
             if (!res.ok) throw new Error('Failed to fetch tree');
             return res.json();
@@ -107,7 +107,7 @@ export const PlannerProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     if (needsElectives) {
       promises.push(
-        fetch(`http://localhost:8000/api/electives/${encodeURIComponent(poid)}`)
+        fetch(`/api/electives/${encodeURIComponent(poid)}`)
           .then(res => {
             if (!res.ok) throw new Error('Failed to fetch electives');
             return res.json();

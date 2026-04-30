@@ -42,7 +42,7 @@ const GeTracker: React.FC<GeTrackerProps> = ({ geCourses: propsGeCourses }) => {
         setLoadingArea(area);
         setError(null);
         try {
-            const response = await fetch(`http://localhost:8000/api/open_ge_classes/${area}`);
+            const response = await fetch(`/api/open_ge_classes/${area}`);
             if (!response.ok) throw new Error('Failed to fetch classes');
 
             const data = await response.json();

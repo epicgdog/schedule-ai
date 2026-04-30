@@ -46,9 +46,15 @@ logger = logging.getLogger(__name__)
 # Each function runs a loader's core logic without triggering its
 # argparse (which would conflict with our own CLI args).
 
+
 def load_ge(force: bool = False) -> None:
     """Load GE course data."""
-    from ge_loader import database_setup, GE_URL, extract_courses_from_ge_data, upsert_ge_courses
+    from ge_loader import (
+        database_setup,
+        GE_URL,
+        extract_courses_from_ge_data,
+        upsert_ge_courses,
+    )
     from scrapers.ge_scraper import scrape_url, extract_ge_areas
     import sqlite3
 
@@ -73,9 +79,11 @@ def load_ge(force: bool = False) -> None:
 def load_ap(force: bool = False) -> None:
     """Load AP articulation data."""
     from ap_loader import database_setup_force, upsert_ap_data, DEFAULT_AP_DATA
+
     database_setup_force()
     if force:
         import sqlite3
+
         with sqlite3.connect(DATABASE) as conn:
             conn.execute("DELETE FROM ap_articulation")
             conn.commit()
@@ -85,8 +93,13 @@ def load_ap(force: bool = False) -> None:
 
 def load_major_exceptions(force: bool = False) -> None:
     """Load major-specific GE exceptions."""
-    from major_exceptions_loader import database_setup, upsert_exceptions, EXCEPTIONS_DATA
+    from major_exceptions_loader import (
+        database_setup,
+        upsert_exceptions,
+        EXCEPTIONS_DATA,
+    )
     import sqlite3
+
     database_setup()
     if force:
         with sqlite3.connect(DATABASE) as conn:
@@ -99,14 +112,22 @@ def load_major_exceptions(force: bool = False) -> None:
 def load_majors(force: bool = False) -> None:
     """Load major/program requirements (scrapes catalog — can be slow)."""
     from major_loader import (
-        database_setup, existing_descriptions, parse_program_links,
-        fetch_description, upsert_reqs, OUTPUT_MD,
+        database_setup,
+        existing_descriptions,
+        parse_program_links,
+        fetch_description,
+        upsert_reqs,
+        OUTPUT_MD,
     )
+
     database_setup()
     existing = existing_descriptions() if not force else {}
     programs = list(parse_program_links(OUTPUT_MD))
-    logger.info("Majors: found %d programs, %d cached",
-                len(programs), sum(1 for v in existing.values() if v))
+    logger.info(
+        "Majors: found %d programs, %d cached",
+        len(programs),
+        sum(1 for v in existing.values() if v),
+    )
 
     rows = []
     for idx, (title, url) in enumerate(programs, start=1):
@@ -127,6 +148,7 @@ def load_courses(force: bool = False) -> None:
     """Load current SJSU course schedule."""
     from current_course_loader import database_setup, scrape_and_load
     import sqlite3
+
     database_setup()
     if force:
         with sqlite3.connect(DATABASE) as conn:
@@ -173,13 +195,13 @@ def load_program_requirements(force: bool = False) -> None:
 # ── Registry ─────────────────────────────────────────────────────
 
 LOADERS = {
-    "ge":           ("GE Courses",            load_ge),
-    "ap":           ("AP Articulation",        load_ap),
-    "exceptions":   ("Major GE Exceptions",    load_major_exceptions),
-    "majors":       ("Major Requirements",     load_majors),
-    "courses":      ("Current Courses",        load_courses),
-    "catalog":      ("Catalog Courses",        load_catalog),
-    "programs_req": ("Program Requirements",   load_program_requirements),
+    "ge": ("GE Courses", load_ge),
+    "ap": ("AP Articulation", load_ap),
+    "exceptions": ("Major GE Exceptions", load_major_exceptions),
+    "majors": ("Major Requirements", load_majors),
+    "courses": ("Current Courses", load_courses),
+    "catalog": ("Catalog Courses", load_catalog),
+    "programs_req": ("Program Requirements", load_program_requirements),
 }
 
 
@@ -188,15 +210,20 @@ def parse_args() -> argparse.Namespace:
         description="Build the SJSU database by running all data loaders",
     )
     parser.add_argument(
-        "--only", nargs="+", choices=LOADERS.keys(),
+        "--only",
+        nargs="+",
+        choices=LOADERS.keys(),
         help="Run only these loaders",
     )
     parser.add_argument(
-        "--skip", nargs="+", choices=LOADERS.keys(),
+        "--skip",
+        nargs="+",
+        choices=LOADERS.keys(),
         help="Skip these loaders",
     )
     parser.add_argument(
-        "--force", action="store_true",
+        "--force",
+        action="store_true",
         help="Force re-scrape / re-load all data",
     )
     return parser.parse_args()
@@ -231,13 +258,17 @@ def main() -> None:
             logger.info("[%d/%d] %s — done in %.1fs", idx, total, name, elapsed)
         except Exception as e:
             elapsed = time.time() - start
-            logger.error("[%d/%d] %s — FAILED after %.1fs: %s", idx, total, name, elapsed, e)
+            logger.error(
+                "[%d/%d] %s — FAILED after %.1fs: %s", idx, total, name, elapsed, e
+            )
             failed.append(name)
 
     logger.info("")
     logger.info("=" * 60)
     if failed:
-        logger.warning("Completed with %d failure(s): %s", len(failed), ", ".join(failed))
+        logger.warning(
+            "Completed with %d failure(s): %s", len(failed), ", ".join(failed)
+        )
         sys.exit(1)
     else:
         logger.info("All %d loaders completed successfully!", total)
