@@ -1,5 +1,6 @@
 services:
   backend:
+    platform: linux/arm64
     build:
       context: .
       dockerfile: server/Dockerfile
@@ -13,6 +14,7 @@ services:
     restart: unless-stopped
 
   frontend:
+    platform: linux/arm64
     build:
       context: ./frontend
       dockerfile: Dockerfile
